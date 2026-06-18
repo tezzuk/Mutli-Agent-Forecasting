@@ -57,7 +57,7 @@ class TrendAgent(BaseAgent):
         self._dp = None
 
     def _make_dp(self, index: pd.DatetimeIndex) -> DeterministicProcess:
-        fourier = CalendarFourier(freq="Y", order=self.fourier_order)
+        fourier = CalendarFourier(freq="YE", order=self.fourier_order)
         return DeterministicProcess(
             index=index,
             constant=True,
@@ -74,7 +74,7 @@ class TrendAgent(BaseAgent):
 
     def predict(self, test_df: pd.DataFrame) -> np.ndarray:
         # out_of_sample needs the number of steps, but here we pass the index directly
-        X = self._dp.out_of_sample(steps=len(test_df), index=test_df.index)
+        X = self._dp.out_of_sample(steps=len(test_df))
         return self._model.predict(X)
 
 
