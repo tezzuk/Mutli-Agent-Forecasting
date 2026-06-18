@@ -74,7 +74,7 @@ class TrendAgent(BaseAgent):
 
     def predict(self, test_df: pd.DataFrame) -> np.ndarray:
         # out_of_sample needs the number of steps, but here we pass the index directly
-        X = self._dp.out_of_sample(steps=len(test_df))
+        X = self._dp.out_of_sample(steps=len(test_df), forecast_index=test_df.index)
         return self._model.predict(X)
 
 
