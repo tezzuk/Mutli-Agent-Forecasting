@@ -33,10 +33,20 @@ class HedgeAggregator:
         """
         Multiplicative weights update.
         Agents that predicted poorly get their weights reduced exponentially.
+
+        Scale-invariance: raw squared-error losses on daily log returns are tiny
+        (~1e-4). With those, exp(-eta * loss) ≈ 1 for any sane eta and the weights
+        never move — the algorithm becomes a no-op equal-weight average. We therefore
+        normalize each step's losses by their mean across agents, so the update
+        depends only on *relative* agent performance and eta has a meaningful,
+        unit-independent effect. (Standard practice for online learning when the
+        loss scale is not naturally in [0, 1].)
         """
         preds = np.array(predictions, dtype=float)
         losses = (preds - actual) ** 2                        # squared error per agent
-        self.weights *= np.exp(-self.eta * losses)            # multiplicative penalty
+        scale = losses.mean() + 1e-12                         # per-step loss scale
+        norm_losses = losses / scale                          # relative, scale-free
+        self.weights *= np.exp(-self.eta * norm_losses)       # multiplicative penalty
         self.weights /= self.weights.sum()                    # renormalize to sum=1
         self.weight_history.append(self.weights.copy())
         self.loss_history.append(losses.copy())

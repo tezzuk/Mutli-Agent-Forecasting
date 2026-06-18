@@ -148,8 +148,10 @@ if __name__ == "__main__":
     raw = load_or_fetch()
     df  = build_feature_matrix(raw)
 
-    agents = [TrendAgent(), MomentumAgent(), VolatilityAgent(), SequenceAgent(epochs=5)]
-    aggregator = HedgeAggregator(n_agents=len(agents), eta=0.1)
+    agents = [TrendAgent(), MomentumAgent(), VolatilityAgent(), SequenceAgent(epochs=25)]
+    # eta now acts on mean-normalized losses (see HedgeAggregator.update), so a
+    # value of order 1 produces meaningful, regime-driven weight adaptation.
+    aggregator = HedgeAggregator(n_agents=len(agents), eta=0.5)
 
     print("Running walk-forward backtest (this may take a few minutes)...")
     results = walk_forward_backtest(agents, aggregator, df,

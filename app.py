@@ -94,7 +94,9 @@ active_agents = [a for a in AGENT_NAMES
 # Eta info
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Hedge η (info)**")
-st.sidebar.info("η=0.1 used in backtest. Optimal η≈0.0094 for T=3520, N=4.")
+st.sidebar.info("η=0.5 on mean-normalized losses. Normalization makes the "
+                "multiplicative update scale-invariant so weights actually adapt "
+                "to regime (raw squared log-return losses ≈1e-4 are too small).")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.title("📈 Multi-Agent Financial Forecasting")

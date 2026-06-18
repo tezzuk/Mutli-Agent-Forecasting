@@ -190,6 +190,7 @@ class SequenceAgent(BaseAgent):
         self.patience = patience
         self._scaler = StandardScaler()
         self._net = None
+        self._train_tail = None   # last `window_size` train returns, for seamless predict
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     @staticmethod
@@ -204,6 +205,11 @@ class SequenceAgent(BaseAgent):
     def fit(self, train_df: pd.DataFrame) -> None:
         returns = train_df["log_return"].values.reshape(-1, 1)
         scaled = self._scaler.fit_transform(returns).flatten()
+
+        # Stash the last window of (raw) training returns. In predict() we prepend
+        # these so the very first test day already has a full 30-day history —
+        # no zero-padding, and no leakage (this window is strictly before the test set).
+        self._train_tail = train_df["log_return"].values[-self.window_size:]
 
         X, y = self._make_sequences(scaled, self.window_size)
         # X shape: (N, window_size) → LSTM expects (N, seq_len, input_size)
@@ -250,8 +256,15 @@ class SequenceAgent(BaseAgent):
             self._net.load_state_dict(best_state)
 
     def predict(self, test_df: pd.DataFrame) -> np.ndarray:
-        returns = test_df["log_return"].values.reshape(-1, 1)
-        scaled = self._scaler.transform(returns).flatten()
+        # Prepend the trailing training window so every test row gets a real
+        # prediction (the first test day is forecast from the last 30 train days).
+        test_returns = test_df["log_return"].values
+        if self._train_tail is not None and len(self._train_tail) == self.window_size:
+            full = np.concatenate([self._train_tail, test_returns])
+        else:
+            full = test_returns
+
+        scaled = self._scaler.transform(full.reshape(-1, 1)).flatten()
 
         X, _ = self._make_sequences(scaled, self.window_size)
         if len(X) == 0:
@@ -267,10 +280,12 @@ class SequenceAgent(BaseAgent):
             preds_scaled.reshape(-1, 1)
         ).flatten()
 
-        # SequenceAgent can only predict from row window_size onward
-        # Pad the first window_size rows with 0 (no prediction available)
+        # With the prepended tail, _make_sequences yields exactly len(test_df)
+        # predictions. Guard against any off-by-one just in case.
+        if len(preds) == len(test_df):
+            return preds
         full_preds = np.zeros(len(test_df))
-        full_preds[self.window_size:] = preds
+        full_preds[-len(preds):] = preds
         return full_preds
 
 
