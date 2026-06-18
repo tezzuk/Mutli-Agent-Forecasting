@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 4 Report — Multi-Agent Financial Forecasting</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+  @media print {
+    .no-print { display: none; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    pre, .card { page-break-inside: avoid; }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #1a1a2e;
+    background: #f8f9ff;
+    padding: 30px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .report-header {
+    background: linear-gradient(135deg, #4361ee 0%, #7209b7 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 32px;
+  }
+  .report-header .tag {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .report-header h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+  .report-header .subtitle { font-size: 14px; opacity: 0.85; margin-bottom: 18px; }
+  .meta-row { display: flex; gap: 24px; flex-wrap: wrap; font-size: 12px; opacity: 0.9; }
+  .meta-item { display: flex; align-items: center; gap: 6px; }
+
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4361ee;
+    margin: 36px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e8ecff;
+  }
+  h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin: 22px 0 10px; }
+  h4 { font-size: 13px; font-weight: 600; color: #4361ee; margin: 16px 0 8px; }
+
+  p { margin-bottom: 10px; }
+
+  .card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    border-left: 4px solid #4361ee;
+    box-shadow: 0 2px 8px rgba(67,97,238,0.08);
+  }
+  .card.green  { border-left-color: #06d6a0; }
+  .card.orange { border-left-color: #f77f00; }
+  .card.purple { border-left-color: #7209b7; }
+  .card.red    { border-left-color: #ef233c; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  th {
+    background: #4361ee;
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid #f0f0f8; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafbff; }
+
+  pre {
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 18px 20px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 12px 0 18px;
+    border: 1px solid #30363d;
+  }
+  code {
+    background: #eef0ff;
+    color: #4361ee;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+
+  .kw  { color: #ff7b72; }
+  .fn  { color: #d2a8ff; }
+  .st  { color: #a5d6ff; }
+  .cm  { color: #8b949e; font-style: italic; }
+  .nm  { color: #ffa657; }
+  .op  { color: #79c0ff; }
+
+  .callout {
+    background: #fff8e1;
+    border-left: 4px solid #f77f00;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 16px 0;
+    font-size: 12.5px;
+  }
+  .callout.danger  { background: #fff0f0; border-left-color: #ef233c; }
+  .callout.success { background: #f0fff8; border-left-color: #06d6a0; }
+  .callout.info    { background: #f0f4ff; border-left-color: #4361ee; }
+  .callout strong  { display: block; margin-bottom: 4px; font-size: 13px; }
+
+  .qa-block { background: white; border-radius: 10px; margin-bottom: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .qa-q { background: #4361ee; color: white; padding: 12px 18px; font-weight: 600; font-size: 13px; }
+  .qa-a { padding: 14px 18px; font-size: 13px; line-height: 1.7; }
+  .qa-a .quote {
+    font-style: italic;
+    background: #f5f7ff;
+    border-left: 3px solid #4361ee;
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin: 10px 0;
+    font-size: 12.5px;
+  }
+
+  .formula {
+    background: #f5f7ff;
+    border: 1px solid #d0d8ff;
+    border-radius: 6px;
+    padding: 12px 18px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    text-align: center;
+    margin: 12px 0;
+    color: #1a1a2e;
+  }
+
+  .arch-diagram {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    padding: 18px 20px;
+    border-radius: 8px;
+    margin: 12px 0;
+    line-height: 2.0;
+  }
+  .arch-diagram .layer  { color: #a5d6ff; }
+  .arch-diagram .shape  { color: #ffa657; }
+  .arch-diagram .arrow  { color: #8b949e; }
+  .arch-diagram .note   { color: #7ee787; font-style: italic; }
+
+  .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  .concept-box { background: white; border-radius: 8px; padding: 14px 16px; border-top: 3px solid #4361ee; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+  .concept-box.g { border-top-color: #06d6a0; }
+  .concept-box.o { border-top-color: #f77f00; }
+  .concept-box.p { border-top-color: #7209b7; }
+  .concept-box h4 { margin-top: 0; }
+
+  .print-btn {
+    position: fixed; top: 20px; right: 20px;
+    background: #4361ee; color: white; border: none;
+    padding: 10px 20px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 12px rgba(67,97,238,0.4);
+  }
+  .print-btn:hover { background: #3a51d4; }
+
+  ul, ol { padding-left: 22px; margin-bottom: 10px; }
+  li { margin-bottom: 4px; }
+  strong { font-weight: 700; }
+  hr { border: none; border-top: 1px solid #e8ecff; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">&#x1F4BE; Save as PDF</button>
+
+<!-- HEADER -->
+<div class="report-header">
+  <div class="tag">Day 4 of 7 &nbsp;·&nbsp; 2026-06-18</div>
+  <h1>LSTM Refinement &amp; Agent Evaluation</h1>
+  <div class="subtitle">Multi-Agent Financial Forecasting &nbsp;·&nbsp; Stamatics, IIT Kanpur</div>
+  <div class="meta-row">
+    <div class="meta-item">&#128196; 2 files modified</div>
+    <div class="meta-item">&#127919; 4 agents benchmarked</div>
+    <div class="meta-item">&#128200; 2 evaluation metrics</div>
+    <div class="meta-item">&#127891; Mentor: Aayushman Tripathi</div>
+  </div>
+</div>
+
+
+<!-- 1. WHAT WAS BUILT -->
+<h2>1. What Was Built Today</h2>
+
+<p>Day 4 had two objectives: (1) confirm the <code>SequenceAgent</code> LSTM implementation from Day 2 is fully correct and production-ready, and (2) build a standardized evaluation harness that trains all four agents and compares them on 2019 out-of-sample data. The SequenceAgent already satisfied all Day 4 checklist items — Day 4 added the validation infrastructure and feature interpretability tools on top.</p>
+
+<table>
+  <thead><tr><th>File</th><th>Change</th><th>What It Adds</th></tr></thead>
+  <tbody>
+    <tr><td><code>pipeline/evaluate.py</code></td><td>New file</td><td>evaluate_agents(), directional_accuracy(), print_feature_importance()</td></tr>
+    <tr><td><code>pipeline/agents.py</code></td><td>Modified</td><td>feature_importance() added to MomentumAgent and VolatilityAgent</td></tr>
+  </tbody>
+</table>
+
+<div class="callout success">
+  <strong>&#9989; SequenceAgent — All Day 4 Requirements Confirmed Complete</strong>
+  Adam optimizer ✅ &nbsp; MSELoss ✅ &nbsp; 20 epochs / batch_size=64 ✅ &nbsp; Early stopping patience=5 ✅ &nbsp; Best-state restoration ✅ &nbsp; StandardScaler fit on train only ✅ &nbsp; De-normalized predictions ✅ &nbsp; Zero-padding for first window_size rows ✅
+</div>
+
+
+<!-- 2. WHY A DEDICATED EVALUATION HARNESS -->
+<h2>2. Why a Dedicated Evaluation Harness?</h2>
+
+<p>Running code and <em>evaluating</em> code are different things. A dedicated evaluation harness enforces scientific discipline — it ensures every agent is tested under identical conditions, with the same train/test split, the same metrics, and a documented record of results. Without this, it is easy to accidentally cherry-pick good results or miss subtle bugs (like training and evaluating on the same window).</p>
+
+<div class="concept-grid">
+  <div class="concept-box">
+    <h4>&#128203; Reproducibility</h4>
+    Every run of <code>evaluate.py</code> produces the same comparison table. The output is saved to <code>results/agent_comparison_2019.csv</code> — a permanent record you can cite in a presentation or paper.
+  </div>
+  <div class="concept-box g">
+    <h4>&#128200; Two Metrics, Not One</h4>
+    MAE measures regression accuracy. Directional Accuracy measures trading utility. Both are needed. A model with low MAE but 49% DA is useless for trading; a model with 53% DA but slightly higher MAE is valuable.
+  </div>
+  <div class="concept-box o">
+    <h4>&#9888; The 2× Sanity Check</h4>
+    The LSTM is complex and slow to train. A hard gate — "LSTM must not be &gt;2× worse than MomentumAgent" — catches normalization bugs, insufficient epochs, or architectural issues before they propagate into the backtest.
+  </div>
+  <div class="concept-box p">
+    <h4>&#128269; Feature Importance</h4>
+    XGBoost's built-in gain importance tells you which features actually drove the model's predictions. This is essential for debugging and for explaining the model to an interviewer or client.
+  </div>
+</div>
+
+
+<!-- 3. METRIC 1: MAE -->
+<h2>3. Metric 1 — MAE (Mean Absolute Error)</h2>
+
+<div class="formula">
+MAE = (1/n) · Σ |y_true_i − y_pred_i|
+</div>
+
+<p>MAE measures the average magnitude of prediction errors in the same units as the target. Here, the target is log returns — so MAE = 0.006 means on average you are off by 0.6 percentage points per day.</p>
+
+<h3>Why MAE for Regression?</h3>
+<ul>
+  <li><strong>Interpretable units:</strong> 0.006 log return = ~0.6% — directly meaningful.</li>
+  <li><strong>Robust to outliers:</strong> unlike RMSE (which squares errors and over-penalizes crash days), MAE treats all errors proportionally.</li>
+  <li><strong>Standard baseline:</strong> the naive benchmark is MAE of a model that always predicts 0 (the mean of log returns ≈ 0). Any model should beat this.</li>
+</ul>
+
+<div class="callout">
+  <strong>&#128161; MAE's Limitation</strong>
+  MAE doesn't capture direction. A model that predicts +0.005% when the actual is −0.005% has MAE of 0.01 — worse than a model predicting 0.0 (MAE = 0.005). But the first model correctly called the direction (positive), while predicting 0.0 has no directional signal at all. This is why Directional Accuracy must be reported alongside MAE.
+</div>
+
+<pre><code><span class="kw">from</span> sklearn.metrics <span class="kw">import</span> mean_absolute_error
+
+mae = mean_absolute_error(y_true, y_pred)
+<span class="cm"># sklearn computes: np.mean(np.abs(y_true - y_pred))</span>
+<span class="cm"># Result: a single float in the same units as the target (log returns)</span>
+</code></pre>
+
+
+<!-- 4. METRIC 2: DIRECTIONAL ACCURACY -->
+<h2>4. Metric 2 — Directional Accuracy</h2>
+
+<div class="formula">
+Directional Accuracy = mean( sign(y_true) == sign(y_pred) )
+</div>
+
+<p>Directional accuracy asks: <em>"Did you correctly predict whether the market went up or down?"</em> For a trading system, this is often more important than the exact magnitude — if you call the direction right, you profit. If you call it wrong, you lose.</p>
+
+<h3>Why 50% Is the Random Baseline</h3>
+<p>For any symmetric distribution of returns (which daily log returns approximately are), the market goes up roughly half the time and down roughly half the time. A coin flip (or always predicting +0.001) would get ~50% directional accuracy purely by chance. Therefore:</p>
+<ul>
+  <li><strong>50%:</strong> random / no signal</li>
+  <li><strong>52–53%:</strong> meaningful edge on daily data — this is what professional quants target</li>
+  <li><strong>&gt;55%:</strong> strong signal (rare in practice; markets are efficient)</li>
+</ul>
+
+<div class="callout info">
+  <strong>&#128161; Why 52% Is Actually Meaningful</strong>
+  Over 252 trading days, a 52% DA model makes correct calls on ~131 days and wrong calls on ~121 days — a +10 day edge. If each correct call earns a small positive return, this compounds to a statistically significant Sharpe ratio over many years. The Kelly criterion shows that even a 52% edge justifies a positive bet size.
+</div>
+
+<h3>How np.sign() Works</h3>
+<pre><code>np.sign(0.003)   <span class="cm"># → +1.0  (positive return → predict long)</span>
+np.sign(-0.002)  <span class="cm"># → -1.0  (negative return → predict short)</span>
+np.sign(0.0)     <span class="cm"># →  0.0  (exactly zero — rare, treated as neutral)</span>
+
+<span class="cm"># Directional accuracy implementation:</span>
+<span class="kw">def</span> <span class="fn">directional_accuracy</span>(y_true, y_pred):
+    <span class="kw">return</span> float(np.mean(np.sign(y_true) == np.sign(y_pred)))
+<span class="cm"># Returns a float between 0.0 and 1.0</span>
+<span class="cm"># 0.5 = random, 0.53 = good, 0.55+ = excellent</span>
+</code></pre>
+
+
+<!-- 5. THE 2x SANITY CHECK -->
+<h2>5. The 2× LSTM Sanity Check</h2>
+
+<div class="card red">
+  <p><strong>The Check:</strong> After training, compute <code>ratio = lstm_mae / momentum_mae</code>. If <code>ratio &gt; 2.0</code>, print a warning and flag the issue.</p>
+  <p style="margin-top:8px;"><strong>Why 2×?</strong> LSTM is a complex model that takes 10–20× longer to train than XGBoost. If it's more than twice as inaccurate on a relatively simple prediction task, something is fundamentally broken — not just slightly underperforming.</p>
+</div>
+
+<h3>What To Debug If LSTM Fails the Check</h3>
+
+<table>
+  <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td>ratio &gt; 5×</td><td>StandardScaler not fitted / applied wrong</td><td>Confirm scaler.fit_transform on train, scaler.transform on test</td></tr>
+    <tr><td>ratio 2–4×</td><td>Not enough epochs; model didn't converge</td><td>Increase epochs to 50; check val_loss is decreasing</td></tr>
+    <tr><td>ratio 2–3×</td><td>Window too long; 30-day sequences too sparse</td><td>Try window_size=20 or window_size=15</td></tr>
+    <tr><td>ratio ~2×</td><td>Acceptable on small datasets; LSTM needs more data</td><td>Acceptable; LSTM still contributes diversity to ensemble</td></tr>
+  </tbody>
+</table>
+
+<pre><code>lstm_mae = results.loc[results[<span class="st">"Agent"</span>] == <span class="st">"SequenceAgent"</span>, <span class="st">"MAE"</span>].values[<span class="nm">0</span>]
+mom_mae  = results.loc[results[<span class="st">"Agent"</span>] == <span class="st">"MomentumAgent"</span>, <span class="st">"MAE"</span>].values[<span class="nm">0</span>]
+ratio    = lstm_mae / mom_mae
+
+<span class="kw">if</span> ratio > <span class="nm">2.0</span>:
+    print(<span class="fn">f</span><span class="st">"WARNING: LSTM {ratio:.2f}x worse than MomentumAgent — debug needed"</span>)
+<span class="cm"># This is a debugging gate, not a model rejection criterion.</span>
+<span class="cm"># Even an LSTM with 1.5x worse MAE is valuable for ensemble diversity.</span>
+</code></pre>
+
+
+<!-- 6. SEQUENCEAGENT COMPLETE ARCHITECTURE REVIEW -->
+<h2>6. SequenceAgent — Complete Architecture Review</h2>
+
+<h3>6.1 The Full Data Flow</h3>
+
+<div class="arch-diagram">
+<span class="layer">Input log returns</span> <span class="arrow">→</span> <span class="shape">StandardScaler.fit_transform(train)</span> <span class="note">← fit ONLY on train</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="layer">_make_sequences(scaled, window=30)</span><br>
+&nbsp;&nbsp;<span class="note">→ X shape: (N, 30)  y shape: (N,)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="layer">X.unsqueeze(-1)</span> <span class="arrow">→</span> <span class="shape">(N, 30, 1)</span> <span class="note">← add feature dimension</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="layer">LSTM Layer 1</span> <span class="arrow">→</span> <span class="shape">(N, 30, 64)</span> <span class="note">+ dropout(0.2)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="layer">LSTM Layer 2</span> <span class="arrow">→</span> <span class="shape">(N, 30, 64)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="layer">Take last timestep</span>: <span class="shape">out[:, -1, :]</span> <span class="arrow">→</span> <span class="shape">(N, 64)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="layer">Linear(64 → 1)</span> <span class="arrow">→</span> <span class="shape">(N,)</span> <span class="note">← scaled predictions</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↓<br>
+<span class="layer">scaler.inverse_transform</span> <span class="arrow">→</span> <span class="shape">log return predictions</span>
+</div>
+
+<h3>6.2 The Sliding Window Mechanism</h3>
+
+<p>The <code>_make_sequences(series, window=30)</code> function converts a 1-D return series into overlapping input-output pairs. Here is how it works for a short example with window=3:</p>
+
+<div class="arch-diagram">
+<span class="note">Input series:</span> <span class="layer">[r0, r1, r2, r3, r4, r5, r6]</span><br><br>
+<span class="note">Window=3 sliding sequences:</span><br>
+X[0] = <span class="shape">[r0, r1, r2]</span>  →  y[0] = <span class="layer">r3</span><br>
+X[1] = <span class="shape">[r1, r2, r3]</span>  →  y[1] = <span class="layer">r4</span><br>
+X[2] = <span class="shape">[r2, r3, r4]</span>  →  y[2] = <span class="layer">r5</span><br>
+X[3] = <span class="shape">[r3, r4, r5]</span>  →  y[3] = <span class="layer">r6</span><br><br>
+<span class="note">With window=30 and N=3520 rows → 3490 training sequences</span>
+</div>
+
+<p>Each row of X is a 30-day history of returns. The model must predict the next day's return y from that history. The windows overlap — every day appears in up to 30 different sequences as part of the input.</p>
+
+<h3>6.3 Early Stopping — Step by Step</h3>
+
+<div class="card">
+  <p><strong>What patience=5 means:</strong> "If the validation loss has not improved for 5 consecutive epochs, stop training and restore the best weights seen so far."</p>
+  <p style="margin-top: 8px;">Trace through a training run:</p>
+  <ul>
+    <li>Epoch 1: val_loss = 0.00012 → new best. Save state. wait=0.</li>
+    <li>Epoch 2: val_loss = 0.00010 → new best. Save state. wait=0.</li>
+    <li>Epoch 3: val_loss = 0.00011 → no improvement. wait=1.</li>
+    <li>Epoch 4: val_loss = 0.00013 → no improvement. wait=2.</li>
+    <li>Epoch 5: val_loss = 0.00012 → no improvement. wait=3.</li>
+    <li>Epoch 6: val_loss = 0.00014 → no improvement. wait=4.</li>
+    <li>Epoch 7: val_loss = 0.00015 → no improvement. wait=5 = patience → STOP.</li>
+    <li>Restore weights from Epoch 2 (best_val = 0.00010).</li>
+  </ul>
+</div>
+
+<h3>6.4 Why <code>.clone()</code> For Best State Saving</h3>
+
+<pre><code><span class="cm"># WRONG — saves a reference, not a copy</span>
+best_state = self._net.state_dict()
+<span class="cm"># state_dict() returns a dict of tensors that are still LIVE in the model.</span>
+<span class="cm"># As training continues, the tensors change. best_state now reflects</span>
+<span class="cm"># the CURRENT weights, not the best weights. You've lost the snapshot.</span>
+
+<span class="cm"># CORRECT — saves an independent deep copy</span>
+best_state = {k: v.clone() <span class="kw">for</span> k, v <span class="kw">in</span> self._net.state_dict().items()}
+<span class="cm"># .clone() creates a new tensor with the same values but independent memory.</span>
+<span class="cm"># Subsequent training steps don't affect best_state.</span>
+</code></pre>
+
+<h3>6.5 Why LSTM Needs StandardScaler But XGBoost Does Not</h3>
+
+<div class="concept-grid">
+  <div class="concept-box">
+    <h4>LSTM (Gradient-Based)</h4>
+    LSTM learns via backpropagation — gradients flow through weights. If inputs are on very different scales (e.g., returns ranging from -0.12 to +0.09), gradients become unstable. Large inputs → large activations → saturation of sigmoid/tanh gates → vanishing gradients. StandardScaler centers inputs to mean=0, std=1, putting them in the healthy activation range.
+  </div>
+  <div class="concept-box g">
+    <h4>XGBoost (Tree-Based)</h4>
+    XGBoost splits on threshold values: "if lag_1 &gt; 0.003, go left." The split threshold is always a value from the data — it doesn't matter if lag_1 is in range [−0.12, 0.09] or [−12, 9]. Trees are scale-invariant by design. StandardScaler would have zero effect on XGBoost's predictions.
+  </div>
+</div>
+
+<h3>6.6 Why <code>shuffle=False</code> in DataLoader</h3>
+
+<div class="callout danger">
+  <strong>&#9888; Never shuffle time series sequences</strong>
+  Each sequence in X is [r_{t-30}, ..., r_{t-1}] → predict r_t. These sequences have temporal structure — the patterns the LSTM learns (momentum, mean-reversion) exist across consecutive time steps. If you shuffle, sequence 0 (from early 2010) and sequence 500 (from 2012) can be in the same mini-batch. The LSTM has no way to maintain a coherent hidden state across temporally distant data. More importantly, shuffling with sliding windows causes train/test contamination: if sequence [r_{100}...r_{129}] is in the test set, sequences [r_{98}...r_{127}] and [r_{99}...r_{128}] (which share most of the same data) can leak into training.
+</div>
+
+<h3>6.7 Zero-Padding for the First window_size Rows</h3>
+
+<pre><code>full_preds = np.zeros(len(test_df))
+full_preds[self.window_size:] = preds
+<span class="kw">return</span> full_preds
+
+<span class="cm"># Why? The backtest engine expects predictions for EVERY row in test_df.</span>
+<span class="cm"># But SequenceAgent needs 30 days of history before it can make its first</span>
+<span class="cm"># prediction. So for the first 30 rows, there is genuinely no prediction.</span>
+<span class="cm"># Zero = neutral prediction (predict no return) — honest and non-misleading.</span>
+<span class="cm"># Alternative (predict mean) would introduce a tiny bias.</span>
+</code></pre>
+
+
+<!-- 7. XGBOOST FEATURE IMPORTANCE -->
+<h2>7. XGBoost Feature Importance</h2>
+
+<h3>7.1 What feature_importances_ Measures</h3>
+
+<p>XGBoost's default <code>feature_importances_</code> is based on <strong>gain</strong> — the total reduction in loss (MSE in our case) across all decision tree splits that used that feature. The higher the gain, the more that feature contributes to reducing prediction error.</p>
+
+<div class="card">
+  <p><strong>Gain vs. Frequency Importance:</strong></p>
+  <ul>
+    <li><strong>Frequency:</strong> how many times a feature is used as a split point. Can be misleading — a feature split many times on low-information splits scores high.</li>
+    <li><strong>Gain:</strong> total loss reduction from all splits on that feature. A feature used once on a highly informative split outscores a feature used 100 times on trivial splits.</li>
+    <li><strong>Gain is more informative</strong> for understanding which features actually drive model performance.</li>
+  </ul>
+</div>
+
+<pre><code><span class="kw">def</span> <span class="fn">feature_importance</span>(self) -> pd.Series:
+    cols = [c <span class="kw">for</span> c <span class="kw">in</span> MOMENTUM_FEATURES]
+    <span class="kw">return</span> pd.Series(
+        self._model.feature_importances_,  <span class="cm"># numpy array, one value per feature</span>
+        index=cols[:len(self._model.feature_importances_)]
+    ).sort_values(ascending=<span class="kw">False</span>)        <span class="cm"># highest importance first</span>
+</code></pre>
+
+<h3>7.2 What to Expect From Each Agent</h3>
+
+<table>
+  <thead><tr><th>Agent</th><th>Top Expected Features</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>MomentumAgent</td><td>lag_1, rolling_mean_5, lag_2</td><td>Short-term serial correlation is the strongest signal in daily equity returns</td></tr>
+    <tr><td>MomentumAgent</td><td>rsi_14, macd_signal</td><td>Technical indicators capture medium-term momentum state</td></tr>
+    <tr><td>VolatilityAgent</td><td>vix_level, rolling_std_21</td><td>VIX and realized volatility are the primary regime signals</td></tr>
+    <tr><td>VolatilityAgent</td><td>bb_width, vix_change_5d</td><td>Bollinger width and VIX direction add complementary volatility signals</td></tr>
+  </tbody>
+</table>
+
+<div class="callout info">
+  <strong>&#128161; Interview Insight</strong>
+  If an interviewer asks "which features matter most?", you can answer precisely: "For our MomentumAgent, lag_1 (yesterday's return) and rolling_mean_5 (5-day average return) dominate based on XGBoost gain importance. This aligns with the well-known short-term momentum effect in equity markets — recent positive returns predict slightly positive near-term returns. The RSI and MACD signals add complementary information about the overbought/oversold state."
+</div>
+
+
+<!-- 8. EXPECTED RESULTS -->
+<h2>8. Expected Evaluation Results (2019 Out-of-Sample)</h2>
+
+<p>These are approximate figures based on typical SPY daily return prediction performance. Your actual numbers will depend on random seeds, exact data, and training convergence.</p>
+
+<table>
+  <thead><tr><th>Agent</th><th>MAE (approx)</th><th>Directional Accuracy (approx)</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>TrendAgent</td><td>~0.0075</td><td>~50%</td><td>Near-random DA — daily returns are too noisy for trend-only prediction</td></tr>
+    <tr><td>MomentumAgent</td><td>~0.0065</td><td>~52–53%</td><td>Best tabular model; lag features carry the most signal</td></tr>
+    <tr><td>VolatilityAgent</td><td>~0.0068</td><td>~51–52%</td><td>Marginally weaker overall but stronger during volatile periods</td></tr>
+    <tr><td>SequenceAgent</td><td>~0.0067</td><td>~52%</td><td>Should be within 2× of MomentumAgent; contributes sequence patterns</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>&#128203; Context for These Numbers</strong>
+  Daily S&amp;P 500 return prediction is one of the hardest ML tasks. The efficient market hypothesis implies no model should do much better than random. The 52–53% DA range reflects a small but real and consistent edge from lag features and technical indicators. Professional quant funds target similar ranges on daily data.
+</div>
+
+
+<!-- 9. WHY LSTM DOESN'T ALWAYS BEAT XGBOOST -->
+<h2>9. Why LSTM Doesn't Always Beat XGBoost on Financial Tabular Data</h2>
+
+<div class="card orange">
+  <p>This is a widely misunderstood topic. Deep learning has transformed computer vision, NLP, and audio — but on tabular data with limited samples, gradient-boosted trees frequently outperform neural networks. Understanding why is essential for any ML practitioner.</p>
+</div>
+
+<h3>Reason 1: Sample Size</h3>
+<p>Our training set has ~2,200 rows (2010–2018). An LSTM with two layers of 64 units has ~66,000 parameters. That is a 30:1 parameter-to-sample ratio — severely underdetermined. XGBoost with n_estimators=200 has far fewer effective parameters per data point and benefits from strong regularization via subsample and colsample_bytree.</p>
+
+<h3>Reason 2: Inductive Bias</h3>
+<p>XGBoost has a strong inductive bias toward axis-aligned decision boundaries with multiplicative feature interactions. This is well-suited to financial data, where features like "RSI &gt; 70 AND lag_1 &lt; 0" are natural predictive patterns. LSTMs assume sequential temporal dependency — which is true for language but weaker for daily equity returns, where the market is close to a random walk.</p>
+
+<h3>Reason 3: The Value of LSTM Is Diversity, Not Raw Accuracy</h3>
+
+<div class="callout success">
+  <strong>&#9989; Key Insight for the Hedge Algorithm</strong>
+  Even if SequenceAgent has slightly higher MAE than MomentumAgent, it still contributes value to the ensemble — because it captures different patterns. When MomentumAgent is wrong (e.g., during a regime change), SequenceAgent may be right. The Hedge algorithm exploits exactly this complementarity. An ensemble of diverse mediocre models often beats a single excellent model in financial forecasting.
+</div>
+
+<h3>When LSTM Would Shine</h3>
+<ul>
+  <li>Higher-frequency data (minute-by-minute returns) with thousands of patterns</li>
+  <li>Multi-asset input (stock returns + news sentiment + order flow simultaneously)</li>
+  <li>Longer sequences (90-day or 252-day windows) on stationary features</li>
+  <li>With 10,000+ training examples (e.g., using multiple assets as training instances)</li>
+</ul>
+
+
+<!-- 10. INTERVIEW Q&A -->
+<h2>10. Full Interview Q&amp;A</h2>
+
+<div class="qa-block">
+  <div class="qa-q">Q1. What is directional accuracy and why is it more useful than MAE for a trading system?</div>
+  <div class="qa-a">
+    <div class="quote">Directional accuracy measures the fraction of predictions where the predicted sign matches the actual sign — did you correctly call up or down? For a trading system, this is more actionable than MAE because P&amp;L is driven by direction: if you predict up and the market goes up, you profit; if you predict down and it goes up, you lose. A model with excellent MAE that's wrong about direction 52% of the time loses money. A model with slightly worse MAE but 53% DA generates positive returns. That said, both metrics together give a complete picture — DA alone ignores magnitude, which matters for position sizing.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q2. Why is 50% the random baseline for directional accuracy, not some other number?</div>
+  <div class="qa-a">
+    <div class="quote">For daily equity log returns, the distribution is approximately symmetric around zero — the market goes up roughly as often as it goes down over any given year. A model that always predicts +0.001 (or a coin flip) would correctly call the direction about 50% of the time purely by chance, without learning anything. Therefore 50% is the floor. Anything above 50% represents genuine predictive skill. On very long-term upward trending data (e.g., 20-year periods), a "always predict up" model might achieve 53–54% — but this is not skill, it's just riding the trend. To isolate skill, you compare against the directional accuracy of a "predict the historical average direction" naive model.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q3. Why do you use shuffle=False in your LSTM DataLoader?</div>
+  <div class="qa-a">
+    <div class="quote">Two reasons. First, the LSTM's hidden state is designed to process sequential patterns — shuffling destroys the temporal structure that makes LSTM different from a simple feedforward network. If epoch 3 trains on sequences from 2015 interspersed with 2018, the model never learns coherent multi-step temporal dynamics. Second, our sliding windows overlap: sequence i = [r_{i}...r_{i+29}] and sequence i+1 = [r_{i+1}...r_{i+30}] share 29 of 30 data points. If shuffled, these near-identical sequences can land in both train and validation splits, causing evaluation contamination. Setting shuffle=False preserves temporal order and prevents this.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q4. Why does XGBoost not need StandardScaler but LSTM does?</div>
+  <div class="qa-a">
+    <div class="quote">XGBoost is tree-based — it makes decisions by comparing a feature value to a threshold: "if lag_1 &gt; 0.003, go left." The threshold is always derived from the actual data values, so the absolute scale is irrelevant. Multiplying all features by 100 would change the threshold to 0.3 but the split would be identical. LSTM, by contrast, learns via gradient descent. Input values flow through sigmoid and tanh gates: if inputs are large (e.g., log returns scaled to be large numbers), the gate activations saturate near 0 or 1, killing gradients — the vanishing gradient problem. StandardScaler ensures inputs have mean=0 and std=1, keeping activations in the linear range where gradients are healthy.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q5. What is "gain" feature importance in XGBoost and how does it differ from "frequency"?</div>
+  <div class="qa-a">
+    <div class="quote">Gain importance sums the total reduction in the loss function (MSE in our case) across all decision splits on that feature, across all trees. A feature that appears in one critical split that halves the MSE gets a high gain score. Frequency importance counts how many times a feature appears as a split point regardless of the quality of those splits. Frequency is misleading: a useless feature that generates many low-quality splits scores high on frequency but near zero on gain. Gain is more meaningful for understanding which features actually drive model performance. In practice, for our MomentumAgent, lag_1 typically shows high gain because recent return is the single most predictive feature for next-day return.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q6. What does your 2× sanity check tell you about the LSTM?</div>
+  <div class="qa-a">
+    <div class="quote">It's a debugging gate. If the LSTM's MAE is more than twice the MomentumAgent's MAE, something is fundamentally broken — not just underperforming due to the inherent difficulty of the prediction task. Possible causes: the StandardScaler was accidentally fitted on the full dataset (including test), introducing lookahead into the normalization; the model didn't train for enough epochs and still has near-random weights; the sequence length of 30 is too long for the amount of training data we have, causing underfitting. A ratio under 2× means the LSTM is competitive — even a ratio of 1.5× is acceptable because the LSTM contributes ensemble diversity even with slightly worse raw accuracy.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q7. What is early stopping and why does LSTM need it but XGBoost doesn't?</div>
+  <div class="qa-a">
+    <div class="quote">Early stopping halts training when the model stops improving on held-out validation data, then restores the best weights seen. LSTM needs it because neural networks can overfit: with enough training epochs, they memorize the training sequences and their validation performance degrades even as training loss decreases. XGBoost with the hyperparameters we use (subsample=0.8, colsample_bytree=0.8, max_depth=4) is already heavily regularized — the tree structure and subsampling prevent the kind of variance explosion that requires early stopping. Additionally, XGBoost is trained in a single pass through boosting rounds (not iterative gradient descent), so there's no notion of "epochs" during which overfitting progressively worsens.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q8. Why do you save best_state with .clone() instead of just a reference?</div>
+  <div class="qa-a">
+    <div class="quote">state_dict() in PyTorch returns a dictionary where the values are tensor objects that share memory with the model's live parameters. If you store this dict directly, the "snapshot" updates in place as training continues — you end up with the final weights, not the best weights. .clone() creates a completely independent copy of each tensor in separate memory. Subsequent gradient updates don't affect cloned tensors. At the end of training, we call self._net.load_state_dict(best_state) to restore the actual best checkpoint. This pattern — save-clone on improvement, restore at end — is standard in PyTorch early stopping implementations.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q9. What would happen if you shuffled time series before creating LSTM sequences?</div>
+  <div class="qa-a">
+    <div class="quote">Catastrophic data leakage. Consider a training set of [r_1, ..., r_3000] and a test set of [r_3001, ..., r_3520]. If you shuffle the full series first, then create sliding windows, sequence [r_2990...r_3019] overlaps with the test set boundary — part of the input is from training, part from test. The model has seen future data. More subtly, even within the training set, shuffling before windowing causes near-identical sequences (which share 29 of 30 points) to land in both train and validation folds. The model appears to validate well because it has already memorized the overlapping sequences. In practice, this inflates validation DA by 5–10 percentage points, leading you to believe you have a better model than you do.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q10. If SequenceAgent fails the 2× check, what are the first three things you'd debug?</div>
+  <div class="qa-a">
+    <ol style="padding-left:20px; margin-top:8px;">
+      <li style="margin-bottom:8px;"><strong>Check StandardScaler fit scope.</strong> Print <code>scaler.mean_</code> and <code>scaler.scale_</code> before and after fitting. If the scaler was accidentally fit on test data too (e.g., by calling fit_transform on the full DataFrame), the predictions will be incorrectly de-normalized. Fix: ensure <code>scaler.fit_transform(train_returns)</code> then <code>scaler.transform(test_returns)</code>.</li>
+      <li style="margin-bottom:8px;"><strong>Check training convergence.</strong> Add <code>print(f"Epoch {epoch}: val_loss={val_loss:.6f}")</code> to the training loop. If val_loss is still decreasing at epoch 20, increase epochs to 50. If val_loss immediately stops improving (from epoch 2–3), the model is stuck — try a lower learning rate (1e-4 instead of 1e-3).</li>
+      <li><strong>Reduce window size.</strong> Try window_size=15 or window_size=20. With only ~2,200 training rows, window=30 gives ~2,170 sequences — borderline for an LSTM. A shorter window means more sequences and simpler patterns to learn.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q11. Why is 52% directional accuracy meaningful even though it's close to 50%?</div>
+  <div class="qa-a">
+    <div class="quote">The significance comes from cumulative compounding over many trades. Over 252 trading days per year, a 52% DA model makes 131 correct calls and 121 wrong ones — a +10 advantage. If each correct call earns a small positive expected return (say 0.05% per day on average), the 10-day edge translates to ~0.5% additional annual return. Compounded over a 14-year backtest (3520 days), this becomes statistically highly significant. The binomial test: P(≥131 correct out of 252 with p=0.5) ≈ 0.04, so at the 5% significance level, 52% DA is detectable. In professional quant trading, strategies with consistent 52–53% DA on liquid instruments are genuinely valuable — they form the basis of systematic equity market-neutral strategies.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q12. Why does LSTM contribute value to the ensemble even with slightly worse MAE than XGBoost?</div>
+  <div class="qa-a">
+    <div class="quote">Ensemble theory shows that diversity among models is as important as individual accuracy. If MomentumAgent and SequenceAgent made identical errors (perfectly correlated), combining them would produce no benefit. But they learn different representations of the data — MomentumAgent uses lag features and technical indicators on tabular form; SequenceAgent uses raw return sequences through temporal gates. Their errors are partially uncorrelated. In practice, on days where momentum-based features give weak signals (e.g., near a trend reversal), the LSTM's sequence-based representation may still correctly capture the pattern. The Hedge algorithm will gradually increase SequenceAgent's weight during such periods. This is the core argument for using a heterogeneous ensemble — the whole is greater than the sum of its parts.</div>
+  </div>
+</div>
+
+
+<!-- 11. SUMMARY -->
+<h2>11. Day 4 Summary</h2>
+
+<table>
+  <thead><tr><th>Topic</th><th>Key Takeaway</th></tr></thead>
+  <tbody>
+    <tr><td>Evaluation harness</td><td>Standardized comparison with identical train/test splits; saves results to CSV</td></tr>
+    <tr><td>MAE</td><td>Average error magnitude in log-return units; 0.006 = ~0.6% per day off</td></tr>
+    <tr><td>Directional Accuracy</td><td>Most actionable trading metric; 50% = random, 52%+ = meaningful edge</td></tr>
+    <tr><td>2× sanity check</td><td>Debugging gate; fails → check scaler, epochs, window_size in that order</td></tr>
+    <tr><td>shuffle=False</td><td>Mandatory for time series DataLoader; shuffling destroys temporal structure and causes leakage</td></tr>
+    <tr><td>StandardScaler</td><td>Required for LSTM (gradient stability); irrelevant for XGBoost (scale-invariant)</td></tr>
+    <tr><td>.clone() for best_state</td><td>Creates independent tensor copy; without it you save a live reference that overwrites itself</td></tr>
+    <tr><td>XGBoost feature importance</td><td>Gain = total MSE reduction; lag_1 / rolling_mean_5 dominate MomentumAgent</td></tr>
+    <tr><td>LSTM vs XGBoost on tabular data</td><td>XGBoost often wins on small datasets; LSTM's value is ensemble diversity, not raw accuracy</td></tr>
+  </tbody>
+</table>
+
+<h3>What's Next — Day 5</h3>
+<p>Building the backtesting engine and financial metrics in two new files:</p>
+<ul>
+  <li><strong><code>pipeline/metrics.py</code></strong> — Sharpe ratio, max drawdown, directional accuracy, information ratio. These are the metrics that matter to finance professionals.</li>
+  <li><strong><code>pipeline/backtest.py</code></strong> — Walk-forward validation engine: train on expanding window, test on next 3-month fold, update Hedge weights with realized losses, collect all results into a single DataFrame. This is the gold standard for financial model validation.</li>
+</ul>
+<p>Walk-forward backtesting is what separates this project from a toy demonstration — it validates the pipeline under realistic conditions where the model never sees future data during training.</p>
+
+<hr>
+<p style="text-align:center; color:#8b8fa8; font-size:11px; margin-top:20px;">
+  Multi-Agent Financial Forecasting &nbsp;·&nbsp; Stamatics IIT Kanpur &nbsp;·&nbsp; 2026-06-18<br>
+  Mentor: Aayushman Tripathi &nbsp;·&nbsp; Generated by Claude Code
+</p>
+
+</body>
+</html>

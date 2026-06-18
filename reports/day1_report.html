@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 1 Report — Multi-Agent Financial Forecasting</title>
+<style>
+  /* ── Page & Print Setup ── */
+  @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+  @media print {
+    .no-print { display: none; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    pre, .card { page-break-inside: avoid; }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #1a1a2e;
+    background: #f8f9ff;
+    padding: 30px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  .report-header {
+    background: linear-gradient(135deg, #4361ee 0%, #7209b7 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 32px;
+  }
+  .report-header .tag {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .report-header h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+  .report-header .subtitle { font-size: 14px; opacity: 0.85; margin-bottom: 18px; }
+  .meta-row { display: flex; gap: 24px; flex-wrap: wrap; font-size: 12px; opacity: 0.9; }
+  .meta-item { display: flex; align-items: center; gap: 6px; }
+
+  /* ── Section Headings ── */
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4361ee;
+    margin: 36px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e8ecff;
+  }
+  h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 22px 0 10px;
+  }
+  h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4361ee;
+    margin: 16px 0 8px;
+  }
+
+  p { margin-bottom: 10px; }
+
+  /* ── Cards ── */
+  .card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    border-left: 4px solid #4361ee;
+    box-shadow: 0 2px 8px rgba(67,97,238,0.08);
+  }
+  .card.green  { border-left-color: #06d6a0; }
+  .card.orange { border-left-color: #f77f00; }
+  .card.purple { border-left-color: #7209b7; }
+  .card.red    { border-left-color: #ef233c; }
+
+  /* ── File Table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  th {
+    background: #4361ee;
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0f8;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafbff; }
+
+  /* ── Code Blocks ── */
+  pre {
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 18px 20px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 12px 0 18px;
+    border: 1px solid #30363d;
+  }
+  code {
+    background: #eef0ff;
+    color: #4361ee;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+
+  /* ── Syntax highlighting helpers ── */
+  .kw  { color: #ff7b72; }
+  .fn  { color: #d2a8ff; }
+  .st  { color: #a5d6ff; }
+  .cm  { color: #8b949e; font-style: italic; }
+  .nm  { color: #ffa657; }
+  .op  { color: #79c0ff; }
+
+  /* ── Alert / Callout ── */
+  .callout {
+    background: #fff8e1;
+    border-left: 4px solid #f77f00;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 16px 0;
+    font-size: 12.5px;
+  }
+  .callout.danger { background: #fff0f0; border-left-color: #ef233c; }
+  .callout.success { background: #f0fff8; border-left-color: #06d6a0; }
+  .callout.info { background: #f0f4ff; border-left-color: #4361ee; }
+  .callout strong { display: block; margin-bottom: 4px; font-size: 13px; }
+
+  /* ── Interview Q&A ── */
+  .qa-block {
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .qa-q {
+    background: #4361ee;
+    color: white;
+    padding: 12px 18px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .qa-a {
+    padding: 14px 18px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .qa-a .quote {
+    font-style: italic;
+    background: #f5f7ff;
+    border-left: 3px solid #4361ee;
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin: 10px 0;
+    font-size: 12.5px;
+  }
+
+  /* ── Math formula display ── */
+  .formula {
+    background: #f5f7ff;
+    border: 1px solid #d0d8ff;
+    border-radius: 6px;
+    padding: 12px 18px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    text-align: center;
+    margin: 12px 0;
+    color: #1a1a2e;
+  }
+
+  /* ── Timeline ── */
+  .timeline {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    padding: 18px 20px;
+    border-radius: 8px;
+    margin: 12px 0;
+    line-height: 1.8;
+  }
+  .timeline .left  { color: #a5d6ff; }
+  .timeline .right { color: #7ee787; }
+  .timeline .bar   { color: #8b949e; }
+
+  /* ── Concept Grid ── */
+  .concept-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .concept-box {
+    background: white;
+    border-radius: 8px;
+    padding: 14px 16px;
+    border-top: 3px solid #4361ee;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .concept-box.g { border-top-color: #06d6a0; }
+  .concept-box.o { border-top-color: #f77f00; }
+  .concept-box.p { border-top-color: #7209b7; }
+  .concept-box h4 { margin-top: 0; color: inherit; }
+
+  /* ── Print button ── */
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #4361ee;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(67,97,238,0.4);
+  }
+  .print-btn:hover { background: #3a51d4; }
+
+  ul, ol { padding-left: 22px; margin-bottom: 10px; }
+  li { margin-bottom: 4px; }
+  strong { font-weight: 700; }
+  hr { border: none; border-top: 1px solid #e8ecff; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">&#x1F4BE; Save as PDF</button>
+
+<!-- ══════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════ -->
+<div class="report-header">
+  <div class="tag">Day 1 of 7 &nbsp;·&nbsp; 2026-06-18</div>
+  <h1>Data Pipeline &amp; Feature Engineering</h1>
+  <div class="subtitle">Multi-Agent Financial Forecasting &nbsp;·&nbsp; Stamatics, IIT Kanpur</div>
+  <div class="meta-row">
+    <div class="meta-item">&#128196; 2 files written</div>
+    <div class="meta-item">&#128202; 14 features engineered</div>
+    <div class="meta-item">&#128337; 3,520+ trading days covered</div>
+    <div class="meta-item">&#127891; Mentor: Aayushman Tripathi</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     1. OVERVIEW
+═══════════════════════════════════════════ -->
+<h2>1. What Was Built Today</h2>
+
+<p>Day 1 establishes the data foundation. Before any model can predict anything, you need (a) clean, correctly-labelled financial data and (b) features that describe the market's state on any given day — using <em>only information available before that day's market close</em>.</p>
+
+<p>Two Python files were created:</p>
+
+<table>
+  <thead><tr><th>File</th><th>Role</th><th>Key Output</th></tr></thead>
+  <tbody>
+    <tr><td><code>data/fetch.py</code></td><td>Data ingestion &amp; labelling</td><td>SPY + VIX daily data → CSV files with log returns</td></tr>
+    <tr><td><code>pipeline/features.py</code></td><td>Feature engineering</td><td>14-column feature matrix ready for ML models</td></tr>
+    <tr><td><code>data/__init__.py</code></td><td>Package marker</td><td>Makes <code>data/</code> importable as a module</td></tr>
+    <tr><td><code>pipeline/__init__.py</code></td><td>Package marker</td><td>Makes <code>pipeline/</code> importable as a module</td></tr>
+    <tr><td><code>requirements.txt</code></td><td>Dependency manifest</td><td>Pinned versions for reproducibility</td></tr>
+  </tbody>
+</table>
+
+<div class="callout success">
+  <strong>&#9989; Day 1 Goal Met</strong>
+  Real financial data flowing through a clean feature engineering module with zero lookahead bias.
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     2. FILE 1 — fetch.py
+═══════════════════════════════════════════ -->
+<h2>2. File 1 — <code>data/fetch.py</code></h2>
+
+<h3>2.1 What It Does</h3>
+<ul>
+  <li>Downloads SPY (S&amp;P 500 ETF) daily OHLCV data from 2010-01-01 to 2024-12-31 via <code>yfinance</code></li>
+  <li>Downloads VIX (CBOE Volatility Index) for the same period</li>
+  <li>Computes log returns: <code>log_return = ln(Close_t / Close_{t-1})</code></li>
+  <li>Joins both datasets on the date index, drops missing rows</li>
+  <li>Saves to <code>data/spy_features.csv</code> and <code>data/vix.csv</code></li>
+  <li>Exposes <code>load_or_fetch()</code> — reads from CSV cache if available, downloads fresh if not</li>
+</ul>
+
+<h3>2.2 Full Code + Explanation</h3>
+
+<pre><code><span class="kw">import</span> pathlib
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> yfinance <span class="kw">as</span> yf
+
+<span class="cm"># pathlib.Path(__file__).parent → absolute path of the directory this script lives in</span>
+<span class="cm"># The / operator on Path objects does path joining (not division)</span>
+DATA_DIR = pathlib.Path(__file__).parent
+SPY_CSV  = DATA_DIR / <span class="st">"spy_features.csv"</span>
+VIX_CSV  = DATA_DIR / <span class="st">"vix.csv"</span>
+
+START = <span class="st">"2010-01-01"</span>
+END   = <span class="st">"2024-12-31"</span>
+
+
+<span class="kw">def</span> <span class="fn">fetch_spy</span>() -> pd.DataFrame:
+    df = yf.download(<span class="st">"SPY"</span>, start=START, end=END,
+                     auto_adjust=<span class="kw">True</span>, progress=<span class="kw">False</span>)
+    <span class="cm"># auto_adjust=True: adjusts for stock splits &amp; dividends</span>
+    <span class="cm"># Without this, a 2-for-1 split looks like a 50% price drop overnight</span>
+
+    df = df[[<span class="st">"Close"</span>]].copy()   <span class="cm"># .copy() prevents SettingWithCopyWarning</span>
+    df.columns = [<span class="st">"Close"</span>]
+
+    <span class="cm"># KEY LINE: log return = ln(today's close / yesterday's close)</span>
+    <span class="cm"># .shift(1) gives the previous row's Close — so this is NOT lookahead</span>
+    df[<span class="st">"log_return"</span>] = np.log(df[<span class="st">"Close"</span>] / df[<span class="st">"Close"</span>].shift(<span class="nm">1</span>))
+
+    df.dropna(inplace=<span class="kw">True</span>)   <span class="cm"># first row has NaN (no previous close)</span>
+    <span class="kw">return</span> df
+
+
+<span class="kw">def</span> <span class="fn">fetch_vix</span>() -> pd.DataFrame:
+    vix = yf.download(<span class="st">"^VIX"</span>, start=START, end=END,
+                      auto_adjust=<span class="kw">True</span>, progress=<span class="kw">False</span>)
+    vix = vix[[<span class="st">"Close"</span>]].copy()
+    vix.columns = [<span class="st">"vix_close"</span>]
+
+    <span class="cm"># 5-day percentage change in VIX: is fear rising or falling?</span>
+    vix[<span class="st">"vix_change_5d"</span>] = vix[<span class="st">"vix_close"</span>].pct_change(<span class="nm">5</span>)
+
+    vix.dropna(inplace=<span class="kw">True</span>)
+    <span class="kw">return</span> vix
+
+
+<span class="kw">def</span> <span class="fn">build_dataset</span>() -> pd.DataFrame:
+    spy = fetch_spy()
+    vix = fetch_vix()
+
+    <span class="cm"># .join() aligns on shared DatetimeIndex</span>
+    <span class="cm"># how="inner" keeps only dates present in BOTH datasets</span>
+    df = spy.join(vix, how=<span class="st">"inner"</span>)
+    df.dropna(inplace=<span class="kw">True</span>)
+
+    spy.to_csv(SPY_CSV)      <span class="cm"># save to disk for caching</span>
+    vix.to_csv(VIX_CSV)
+    <span class="kw">return</span> df
+
+
+<span class="kw">def</span> <span class="fn">load_or_fetch</span>() -> pd.DataFrame:
+    <span class="cm"># Cache pattern: read CSV if exists (milliseconds), else download (5 seconds)</span>
+    <span class="kw">if</span> SPY_CSV.exists() <span class="kw">and</span> VIX_CSV.exists():
+        spy = pd.read_csv(SPY_CSV, index_col=<span class="nm">0</span>, parse_dates=<span class="kw">True</span>)
+        vix = pd.read_csv(VIX_CSV, index_col=<span class="nm">0</span>, parse_dates=<span class="kw">True</span>)
+        <span class="kw">return</span> spy.join(vix, how=<span class="st">"inner"</span>).dropna()
+    <span class="kw">return</span> build_dataset()
+</code></pre>
+
+<h3>2.3 Why Log Returns? (Not Prices)</h3>
+
+<div class="concept-grid">
+  <div class="concept-box">
+    <h4>&#128202; Non-Stationarity Problem</h4>
+    SPY was $115 in 2010, $480 in 2024. A model trained on 2010 prices has never seen $400+ inputs — pure distributional shift. Log returns are roughly stable: ~1% daily std, centered near 0, year after year.
+  </div>
+  <div class="concept-box g">
+    <h4>&#10133; Additivity Property</h4>
+    Simple returns compound wrongly: -10% then +10% = -1%, not 0. Log returns add perfectly: r_total = r_1 + r_2 + ... + r_n. This makes multi-period aggregation trivial.
+  </div>
+  <div class="concept-box o">
+    <h4>&#127470;&#127474; Near-Gaussian Distribution</h4>
+    ML models (linear regression, SVR, LSTM) work best with approximately normal inputs. Log returns are far closer to Gaussian than raw prices, reducing bias in model learning.
+  </div>
+  <div class="concept-box p">
+    <h4>&#127381; Finance Theory Connection</h4>
+    Log returns arise from geometric Brownian motion — the foundation of Black-Scholes. Using them connects your ML pipeline to the standard quant finance mathematical framework.
+  </div>
+</div>
+
+<div class="formula">
+log_return_t = ln( Close_t / Close_{t-1} ) ≈ (Close_t − Close_{t-1}) / Close_{t-1}  for small moves
+</div>
+
+<h3>2.4 What Is VIX and Why Include It?</h3>
+
+<div class="card purple">
+  <p>The <strong>VIX (CBOE Volatility Index)</strong> is the "fear gauge" of Wall Street. It is computed from the implied volatilities of S&amp;P 500 options expiring in the next 30 days. It represents what the <em>options market</em> expects the S&amp;P 500 to move over the next month (annualized).</p>
+  <ul>
+    <li><strong>VIX = 12:</strong> Calm market, ~0.75% expected daily move. Market is complacent.</li>
+    <li><strong>VIX = 30:</strong> Stress regime. ~1.9% expected daily move.</li>
+    <li><strong>VIX = 80:</strong> (March 2020, COVID) ~5% expected daily move. Extreme fear.</li>
+  </ul>
+  <p style="margin-top:10px;"><strong>Why VIX and not just price volatility?</strong> VIX captures the options market's <em>forward-looking</em> fear. High VIX while realized price volatility is still low = early warning signal the options market has detected a threat before the price series has moved. They carry different information.</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     3. FILE 2 — features.py
+═══════════════════════════════════════════ -->
+<h2>3. File 2 — <code>pipeline/features.py</code></h2>
+
+<h3>3.1 What It Does</h3>
+<p>Transforms raw OHLCV data into a clean feature matrix where every row represents the market's state on day <em>t</em>, computed exclusively from data available at <em>t−1</em> or earlier. The last column <code>log_return</code> is the prediction target.</p>
+
+<table>
+  <thead><tr><th>Function</th><th>Algorithm</th><th>Output Column(s)</th></tr></thead>
+  <tbody>
+    <tr><td><code>compute_rsi()</code></td><td>Wilder RSI via EWM</td><td><code>rsi_14</code></td></tr>
+    <tr><td><code>compute_macd()</code></td><td>MACD line + Signal line via EWM</td><td><code>macd_signal</code></td></tr>
+    <tr><td><code>compute_bollinger()</code></td><td>Bollinger Band Width via SMA</td><td><code>bb_width</code></td></tr>
+    <tr><td><code>compute_lag_features()</code></td><td>Shifted return series</td><td><code>lag_1, lag_2, lag_3, lag_5, lag_10</code></td></tr>
+    <tr><td><code>compute_rolling_features()</code></td><td>Rolling mean + std</td><td><code>rolling_mean_5/21, rolling_std_5/21</code></td></tr>
+    <tr><td><code>build_feature_matrix()</code></td><td>Assembler + lookahead guard</td><td>All 14 columns + target</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 Algorithm 1: RSI (Relative Strength Index)</h3>
+
+<div class="card">
+  <p><strong>What it measures:</strong> Whether the asset is <em>overbought</em> (RSI &gt; 70) or <em>oversold</em> (RSI &lt; 30) relative to its recent history. Scale: 0–100.</p>
+</div>
+
+<h4>Mathematical Formula</h4>
+<div class="formula">
+Step 1:  delta_t = Price_t − Price_{t-1}<br><br>
+Step 2:  gain_t = max(delta_t, 0)   &nbsp;&nbsp;&nbsp;  loss_t = max(−delta_t, 0)<br><br>
+Step 3:  avg_gain = EWM(gain, com=13)   &nbsp;&nbsp;  avg_loss = EWM(loss, com=13)<br><br>
+Step 4:  RS = avg_gain / avg_loss<br><br>
+Step 5:  RSI = 100 − (100 / (1 + RS))
+</div>
+
+<h4>Code Walkthrough</h4>
+<pre><code><span class="kw">def</span> <span class="fn">compute_rsi</span>(series: pd.Series, period: <span class="nm">int</span> = <span class="nm">14</span>) -> pd.Series:
+    delta = series.diff()           <span class="cm"># price[t] - price[t-1]</span>
+
+    gain = delta.clip(lower=<span class="nm">0</span>)     <span class="cm"># keeps positives, zeros out negatives</span>
+    loss = -delta.clip(upper=<span class="nm">0</span>)    <span class="cm"># keeps magnitudes of losses as positive numbers</span>
+
+    <span class="cm"># EWM with com=13: alpha = 1/(1+13) = 1/14</span>
+    <span class="cm"># min_periods=14: return NaN until we have 14 observations</span>
+    avg_gain = gain.ewm(com=period - <span class="nm">1</span>, min_periods=period).mean()
+    avg_loss = loss.ewm(com=period - <span class="nm">1</span>, min_periods=period).mean()
+
+    rs = avg_gain / avg_loss.replace(<span class="nm">0</span>, np.nan)  <span class="cm"># avoid division by zero</span>
+    <span class="kw">return</span> <span class="nm">100</span> - (<span class="nm">100</span> / (<span class="nm">1</span> + rs))
+</code></pre>
+
+<div class="callout info">
+  <strong>&#128161; Why EWM, not simple rolling average?</strong>
+  Two reasons: (1) EWM responds faster to regime changes — recent observations get higher weight. (2) It avoids the "drop-off cliff" — with SMA, when an extreme observation <em>leaves</em> the 14-day window, RSI jumps discontinuously even if nothing happened today. EWM never fully forgets; it just down-weights old observations.
+</div>
+
+<h4>EWM Parameter Cheat Sheet</h4>
+<table>
+  <thead><tr><th>Parameter</th><th>Formula</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td><code>com=k</code></td><td>α = 1 / (1 + k)</td><td>com=13 → α = 1/14 ≈ 0.071</td></tr>
+    <tr><td><code>span=s</code></td><td>α = 2 / (1 + s)</td><td>span=12 → α = 2/13 ≈ 0.154</td></tr>
+    <tr><td><code>halflife=h</code></td><td>α = 1 − e^(−ln2/h)</td><td>halflife=9 → α ≈ 0.074</td></tr>
+  </tbody>
+</table>
+
+<h3>3.3 Algorithm 2: MACD (Moving Average Convergence/Divergence)</h3>
+
+<div class="card green">
+  <p><strong>What it measures:</strong> Whether short-term momentum is <em>accelerating</em> (MACD positive) or <em>decelerating</em> (MACD negative) relative to the longer-term trend. Positive MACD = fast EMA above slow EMA = bullish short-term momentum.</p>
+</div>
+
+<div class="formula">
+EMA_fast   = EWM(price, span=12)    ← "where is the market right now?"<br><br>
+EMA_slow   = EWM(price, span=26)    ← "where has the market been?"<br><br>
+MACD_line  = EMA_fast − EMA_slow<br><br>
+Signal_line = EWM(MACD_line, span=9)   ← smoothed MACD (what we use as feature)
+</div>
+
+<pre><code><span class="kw">def</span> <span class="fn">compute_macd</span>(series: pd.Series, fast=<span class="nm">12</span>, slow=<span class="nm">26</span>, signal=<span class="nm">9</span>):
+    <span class="cm"># adjust=False uses recursive formula: EMA_t = α*price_t + (1-α)*EMA_{t-1}</span>
+    <span class="cm"># This is the finance industry standard convention</span>
+    ema_fast    = series.ewm(span=fast,   adjust=<span class="kw">False</span>).mean()
+    ema_slow    = series.ewm(span=slow,   adjust=<span class="kw">False</span>).mean()
+    macd_line   = ema_fast - ema_slow
+    signal_line = macd_line.ewm(span=signal, adjust=<span class="kw">False</span>).mean()
+    <span class="kw">return</span> macd_line, signal_line
+</code></pre>
+
+<div class="callout">
+  <strong>&#128203; Why use the Signal Line, not the MACD Line?</strong>
+  The raw MACD line is noisy. The signal line (9-period EWM of MACD) is a smoother version. For ML models, noisy features add variance without adding predictive information, so we use the smoothed signal line as the feature.
+</div>
+
+<h3>3.4 Algorithm 3: Bollinger Band Width</h3>
+
+<div class="card orange">
+  <p><strong>What it measures:</strong> Market volatility as a normalized envelope around price. <strong>Narrow bands</strong> = quiet market (often precedes a large breakout). <strong>Wide bands</strong> = turbulent market. Uses <em>SMA</em> (not EWM) by original design.</p>
+</div>
+
+<div class="formula">
+Middle Band  = SMA(price, 20)<br><br>
+Upper Band   = Middle + 2 × std(price, 20)<br><br>
+Lower Band   = Middle − 2 × std(price, 20)<br><br>
+BB Width     = (Upper − Lower) / Middle  =  4 × std / SMA
+</div>
+
+<pre><code><span class="kw">def</span> <span class="fn">compute_bollinger</span>(series: pd.Series, window: <span class="nm">int</span> = <span class="nm">20</span>) -> pd.Series:
+    mid   = series.rolling(window).mean()    <span class="cm"># SMA (not EWM) — Bollinger's original spec</span>
+    std   = series.rolling(window).std()
+    upper = mid + <span class="nm">2</span> * std
+    lower = mid - <span class="nm">2</span> * std
+    <span class="cm"># Divide by mid: normalizes for price level (2010 SPY=$115 vs 2024 SPY=$480)</span>
+    <span class="kw">return</span> (upper - lower) / mid             <span class="cm"># simplifies to 4*std/mid</span>
+</code></pre>
+
+<h3>3.5 Algorithm 4: Lag Features</h3>
+
+<pre><code><span class="kw">def</span> <span class="fn">compute_lag_features</span>(series: pd.Series, lags=(<span class="nm">1</span>, <span class="nm">2</span>, <span class="nm">3</span>, <span class="nm">5</span>, <span class="nm">10</span>)) -> pd.DataFrame:
+    <span class="cm"># Dictionary comprehension: creates one column per lag</span>
+    <span class="cm"># lag_1 at row t = series[t-1] (yesterday's return)</span>
+    <span class="cm"># lag_10 at row t = series[t-10] (two weeks ago)</span>
+    <span class="kw">return</span> pd.DataFrame(
+        {<span class="fn">f</span><span class="st">"lag_{lag}"</span>: series.shift(lag) <span class="kw">for</span> lag <span class="kw">in</span> lags}
+    )
+</code></pre>
+
+<p>Why these specific lags? <strong>1, 2, 3</strong> capture short-term serial dependence. <strong>5</strong> = one week (weekly patterns). <strong>10</strong> = two weeks (medium-term momentum).</p>
+
+<h3>3.6 Algorithm 5: Rolling Statistics</h3>
+
+<pre><code><span class="kw">def</span> <span class="fn">compute_rolling_features</span>(series: pd.Series, windows=(<span class="nm">5</span>, <span class="nm">21</span>)) -> pd.DataFrame:
+    frames = {}
+    <span class="kw">for</span> w <span class="kw">in</span> windows:
+        <span class="cm"># CRITICAL: .shift(1) BEFORE .rolling()</span>
+        <span class="cm"># Without shift: rolling at t includes r_t itself → lookahead bias</span>
+        <span class="cm"># With shift:    rolling at t covers r_{t-1} through r_{t-w} → safe</span>
+        frames[<span class="fn">f</span><span class="st">"rolling_mean_{w}"</span>] = series.shift(<span class="nm">1</span>).rolling(w).mean()
+        frames[<span class="fn">f</span><span class="st">"rolling_std_{w}"</span>]  = series.shift(<span class="nm">1</span>).rolling(w).std()
+    <span class="kw">return</span> pd.DataFrame(frames)
+</code></pre>
+
+<h3>3.7 The Master Builder: <code>build_feature_matrix()</code></h3>
+
+<pre><code><span class="kw">def</span> <span class="fn">build_feature_matrix</span>(df: pd.DataFrame) -> pd.DataFrame:
+    <span class="cm">###############################################################</span>
+    <span class="cm"># THE KEYSTONE LINE — shifts all price-based features by 1 day</span>
+    <span class="cm">###############################################################</span>
+    close = df[<span class="st">"Close"</span>].shift(<span class="nm">1</span>)
+
+    rsi             = compute_rsi(close).rename(<span class="st">"rsi_14"</span>)
+    _, macd_signal  = compute_macd(close)
+    macd_signal     = macd_signal.rename(<span class="st">"macd_signal"</span>)
+    bb_width        = compute_bollinger(close).rename(<span class="st">"bb_width"</span>)
+    lag_feats       = compute_lag_features(df[<span class="st">"log_return"</span>], lags=(<span class="nm">1</span>,<span class="nm">2</span>,<span class="nm">3</span>,<span class="nm">5</span>,<span class="nm">10</span>))
+    roll_feats      = compute_rolling_features(df[<span class="st">"log_return"</span>], windows=(<span class="nm">5</span>,<span class="nm">21</span>))
+    vix_level       = df[<span class="st">"vix_close"</span>].shift(<span class="nm">1</span>).rename(<span class="st">"vix_level"</span>)
+    vix_change      = df[<span class="st">"vix_change_5d"</span>].shift(<span class="nm">1</span>).rename(<span class="st">"vix_change_5d"</span>)
+
+    feature_df = pd.concat(
+        [rsi, macd_signal, bb_width, lag_feats, roll_feats,
+         vix_level, vix_change, df[<span class="st">"log_return"</span>]],   <span class="cm"># target is LAST</span>
+        axis=<span class="nm">1</span>,
+    )
+    feature_df.dropna(inplace=<span class="kw">True</span>)
+    <span class="kw">return</span> feature_df
+</code></pre>
+
+
+<!-- ══════════════════════════════════════════
+     4. LOOKAHEAD BIAS
+═══════════════════════════════════════════ -->
+<h2>4. The Lookahead Bias Problem</h2>
+
+<div class="callout danger">
+  <strong>&#9888; The #1 Failure Mode in Financial ML</strong>
+  Lookahead bias occurs when your training features accidentally include information that wouldn't have been available at prediction time. The model looks brilliant in backtesting, then collapses immediately in live trading.
+</div>
+
+<h3>4.1 A Concrete Wrong Example</h3>
+
+<pre><code><span class="cm"># ❌ WRONG — DO NOT DO THIS</span>
+df[<span class="st">"rsi"</span>]    = compute_rsi(df[<span class="st">"Close"</span>])       <span class="cm"># uses Close_t</span>
+df[<span class="st">"target"</span>] = df[<span class="st">"log_return"</span>]              <span class="cm"># = ln(Close_t / Close_{t-1}) — also uses Close_t!</span>
+
+<span class="cm"># Both feature and target depend on Wednesday's Close.</span>
+<span class="cm"># Model learns: "RSI is high when prices went up, prices going up = positive return"</span>
+<span class="cm"># This is circular description, not prediction.</span>
+<span class="cm"># Backtest result: near-perfect. Live trading result: immediate collapse.</span>
+</code></pre>
+
+<h3>4.2 The Correct Timeline</h3>
+
+<div class="timeline">
+  <span class="left">Features (all from t−1 or earlier)</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="bar">│</span>&nbsp;&nbsp;&nbsp;<span class="right">Target (realized at t)</span><br>
+  <span class="left">RSI( Close_{t-1}, Close_{t-2}, ... )</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="bar">│</span>&nbsp;&nbsp;&nbsp;<span class="right">log_return_t</span><br>
+  <span class="left">MACD_signal( Close_{t-1}, ... )</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="bar">│</span>&nbsp;&nbsp;&nbsp;<span class="right">= ln( Close_t / Close_{t-1} )</span><br>
+  <span class="left">lag_1 = log_return_{t-1}</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="bar">│</span><br>
+  <span class="left">VIX_close_{t-1}</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="bar">│</span><br>
+  <span class="left">rolling_mean_5 = mean(r_{t-1}...r_{t-5})</span>&nbsp;&nbsp;&nbsp;<span class="bar">│</span><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="bar">│</span>&nbsp;&nbsp;&nbsp;<span class="cm">← Information only flows left to right</span>
+</div>
+
+<h3>4.3 The Subtle Rolling Bug</h3>
+<pre><code><span class="cm"># ❌ WRONG — rolling at t includes r_t itself</span>
+series.rolling(<span class="nm">5</span>).mean()
+
+<span class="cm"># ✅ CORRECT — window ends at t-1</span>
+series.shift(<span class="nm">1</span>).rolling(<span class="nm">5</span>).mean()
+</code></pre>
+
+<p><strong>How to detect this bug:</strong> Your backtest performance degrades dramatically compared to paper trading. That gap is the fingerprint of lookahead bias.</p>
+
+
+<!-- ══════════════════════════════════════════
+     5. FEATURE MATRIX — CONCRETE EXAMPLE
+═══════════════════════════════════════════ -->
+<h2>5. What a Single Feature Row Looks Like</h2>
+
+<p>A row for <strong>January 15, 2020</strong> (pre-COVID, calm market). All features describe the state at January 14's close. The target is what actually happened on January 15.</p>
+
+<table>
+  <thead><tr><th>Column</th><th>Value</th><th>Interpretation</th></tr></thead>
+  <tbody>
+    <tr><td><code>rsi_14</code></td><td>62.4</td><td>Mildly bullish; not yet overbought</td></tr>
+    <tr><td><code>macd_signal</code></td><td>+0.0031</td><td>Slight upward momentum</td></tr>
+    <tr><td><code>bb_width</code></td><td>0.021</td><td>Very narrow — quiet, low-volatility market</td></tr>
+    <tr><td><code>lag_1</code></td><td>+0.0043</td><td>Yesterday's log return: +0.43%</td></tr>
+    <tr><td><code>lag_2</code></td><td>−0.0012</td><td>Day before: −0.12%</td></tr>
+    <tr><td><code>lag_5</code></td><td>+0.0021</td><td>One week ago: +0.21%</td></tr>
+    <tr><td><code>lag_10</code></td><td>−0.0009</td><td>Two weeks ago: −0.09%</td></tr>
+    <tr><td><code>rolling_mean_5</code></td><td>+0.0031</td><td>5-day avg return: +0.31% — short uptrend</td></tr>
+    <tr><td><code>rolling_std_5</code></td><td>0.0040</td><td>5-day realized vol: 0.4%/day — calm</td></tr>
+    <tr><td><code>rolling_mean_21</code></td><td>+0.0018</td><td>Monthly avg return: +0.18%/day</td></tr>
+    <tr><td><code>rolling_std_21</code></td><td>0.0072</td><td>Monthly realized vol: 0.72%/day</td></tr>
+    <tr><td><code>vix_level</code></td><td>12.1</td><td>VIX=12: extreme market complacency</td></tr>
+    <tr><td><code>vix_change_5d</code></td><td>−0.038</td><td>VIX fell 3.8% over 5 days — fear declining</td></tr>
+    <tr><td><strong><code>log_return</code></strong></td><td>+0.0051</td><td><strong>TARGET: +0.51% (not a feature!)</strong></td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>&#128161; Three weeks later — COVID hits</strong>
+  The same row type on March 16, 2020 looks completely different: VIX=82, lag_1=−0.12, RSI=8, rolling_std_5=0.055. This regime shift is exactly why we need the Hedge aggregator (Day 3) — it will shift weight toward whichever agent handles extreme regimes best.
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     6. INTERVIEW Q&A
+═══════════════════════════════════════════ -->
+<h2>6. Full Interview Q&amp;A</h2>
+
+<div class="qa-block">
+  <div class="qa-q">Q1. Why do you use log returns as your prediction target instead of raw prices?</div>
+  <div class="qa-a">
+    <div class="quote">Log returns satisfy three key properties that raw prices lack. First, they are additive over time — the k-period log return is the sum of k one-period log returns, making aggregation trivial. Second, they are approximately stationary in distribution — the statistical properties of daily log returns in 2010 are comparable to 2024, unlike prices which are on completely different scales. Third, log returns arise from geometric Brownian motion, the foundation of Black-Scholes, connecting our ML pipeline to mainstream quant finance theory.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q2. What is lookahead bias and how did you prevent it?</div>
+  <div class="qa-a">
+    <div class="quote">Lookahead bias is the temporal version of data leakage — accidentally including future information in your training features. The most common form is using the current day's price to compute an indicator, then predicting the current day's return which also depends on that price. The fix is architectural: in <code>build_feature_matrix()</code>, the very first step is <code>close = df["Close"].shift(1)</code>. All technical indicators (RSI, MACD, Bollinger) are computed from this shifted series — meaning every feature at row t uses data from t-1 and earlier, never from t itself.</div>
+    <p>The subtlest case is rolling statistics. <code>series.rolling(5).mean()</code> at row t includes <code>r_t</code> — that is lookahead. The fix is <code>series.shift(1).rolling(5).mean()</code>, ensuring the window ends at t-1.</p>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q3. Why does RSI use an exponentially weighted average instead of a simple moving average?</div>
+  <div class="qa-a">
+    <div class="quote">Two reasons. First, EWM is more responsive — recent observations receive higher weight, so regime changes register faster in the RSI signal. Second, EWM avoids the "drop-off cliff" artifact. With SMA, when an extreme observation drops out of the 14-day window, RSI jumps discontinuously even if nothing happened in the market today. EWM never fully forgets an observation — it just down-weights it exponentially — so there are no artificial discontinuities in the signal.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q4. VIX is derived from S&amp;P 500 options, and SPY tracks the S&amp;P 500. Aren't they the same information?</div>
+  <div class="qa-a">
+    <div class="quote">They carry different information. Rolling price volatility (like <code>rolling_std_21</code>) measures what has already happened — it is backward-looking realized volatility. VIX measures the options market's <em>expectation</em> of future volatility — it is forward-looking implied volatility. High VIX while realized price volatility is still low signals that the options market has detected an upcoming risk that the price series has not yet moved on. This divergence is an early warning signal that backward-looking features simply cannot capture.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q5. Why did you choose SPY over individual stocks or other indices?</div>
+  <div class="qa-a">
+    <div class="quote">Three reasons. First, SPY is the most liquid ETF in the world — ~70 million shares per day — so there is no thin-trading noise that creates artificial price jumps in illiquid assets. Second, prices are efficient and well-studied, making it an honest benchmark; if your model beats buy-and-hold on SPY, it is genuinely impressive. Third, 14 years of clean daily data gives ~3,500 training examples — manageable for ML without needing high-frequency data.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q6. What is the difference between <code>com=</code>, <code>span=</code>, and <code>halflife=</code> in pandas EWM, and which did you use for RSI vs. MACD?</div>
+  <div class="qa-a">
+    <p>All three are parameterizations of the same alpha (decay rate) in EWM:</p>
+    <ul>
+      <li><code>com=k</code>: α = 1/(1+k). Used for RSI: <code>com=period-1=13</code> → α=1/14. This matches Wilder's original definition.</li>
+      <li><code>span=s</code>: α = 2/(1+s). Used for MACD: <code>span=12</code> → α≈0.154, <code>span=26</code> → α≈0.074. This matches the finance industry convention for EMA-based indicators.</li>
+      <li><code>halflife=h</code>: α = 1−e^(−ln2/h). Used when you want to specify "an observation from h days ago has half the weight of today's."</li>
+    </ul>
+    <div class="quote">For RSI I used <code>com=period-1</code> because Wilder's original 1978 formula defined the smoothing constant as 1/period, which corresponds to <code>com=period-1</code> in pandas notation. For MACD I used <code>span=</code> because the standard 12/26/9 MACD specification was defined in terms of EMA spans.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q7. Why 14 periods for RSI? Why not 7 or 28?</div>
+  <div class="qa-a">
+    <div class="quote">14 is the Wilder convention from 1978, representing approximately three calendar weeks of trading. It is a trade-off: shorter periods (7) are more sensitive to short-term noise and produce more false signals; longer periods (28) are too slow to react to meaningful regime changes. In practice, 14 is the industry default because it balances signal quality against responsiveness. In a research setting we would cross-validate this as a hyperparameter.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q8. What does Bollinger Band width tell you that <code>rolling_std_21</code> doesn't?</div>
+  <div class="qa-a">
+    <div class="quote">They measure the same underlying thing (realized volatility) but with two differences. First, Bollinger uses a 20-day window vs. rolling_std_21's 21-day window — minor. Second and more importantly, Bollinger Band width is normalized by the middle band (mid price), making it a relative measure: 4×std/SMA. This normalization means the value is comparable across different price levels (2010 SPY at $115 vs. 2024 at $480). <code>rolling_std_21</code> is an absolute std of log returns, which is already scale-free. In practice they are correlated but not identical — Bollinger uses SMA of prices while rolling_std is computed on log returns directly.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q9. Why use MACD signal line as your feature instead of the raw MACD line?</div>
+  <div class="qa-a">
+    <div class="quote">The raw MACD line (fast EMA minus slow EMA) is noisy. The signal line applies a 9-period EWM to the MACD line, smoothing it. For ML models, noisy features add variance to predictions without contributing predictive information — they increase the model's effective noise floor. Classic technical analysis triggers on MACD-signal crossovers, but for a continuous regression target, the smooth level of the signal line is more informative than the noisy level of the raw MACD line.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q10. How would you detect lookahead bias if it had accidentally been introduced?</div>
+  <div class="qa-a">
+    <div class="quote">The classic detection method is comparing backtest performance to paper trading (forward-testing) performance. Lookahead bias inflates backtest metrics — directional accuracy, Sharpe ratio — dramatically. When you deploy the same model on out-of-sample data where the future is genuinely unknown, performance degrades sharply. A second method is the "correlation check": if any feature has suspiciously high correlation (|r| > 0.7) with the same-day return, you likely have a lookahead bug. Third, unit testing each feature function with a fixed seed and checking that the value at row t changes if and only if you modify data at t-1 or earlier — never if you modify data at t itself.</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     7. SUMMARY
+═══════════════════════════════════════════ -->
+<h2>7. Day 1 Summary</h2>
+
+<table>
+  <thead><tr><th>Concept</th><th>Key Takeaway</th></tr></thead>
+  <tbody>
+    <tr><td>Log returns</td><td>Stationary, additive, near-Gaussian. Standard prediction target in quant finance.</td></tr>
+    <tr><td>VIX</td><td>Forward-looking implied vol. Different signal from realized price vol.</td></tr>
+    <tr><td>load_or_fetch()</td><td>Cache-then-compute pattern. Reads CSV if exists, downloads if not.</td></tr>
+    <tr><td>RSI</td><td>EWM ratio of avg gains to avg losses. Overbought/oversold indicator. com=period-1.</td></tr>
+    <tr><td>MACD</td><td>Fast EMA minus slow EMA. Signal line (smoothed) used as feature. adjust=False.</td></tr>
+    <tr><td>Bollinger Width</td><td>Normalized volatility envelope. SMA-based. Narrow = low vol.</td></tr>
+    <tr><td>Lag features</td><td>Raw historical returns as model inputs. Already safe via shift(lag).</td></tr>
+    <tr><td>Rolling features</td><td>shift(1) BEFORE rolling() is mandatory. Window must end at t-1.</td></tr>
+    <tr><td>Lookahead bias</td><td>#1 failure mode. Keystone fix: <code>close = df["Close"].shift(1)</code> in build_feature_matrix().</td></tr>
+    <tr><td>Feature matrix row</td><td>Snapshot of market state at t-1. Predicts log_return at t. 14 features + 1 target.</td></tr>
+  </tbody>
+</table>
+
+<h3>What's Next — Day 2</h3>
+<p>Building the 4 agent classes in <code>pipeline/agents.py</code>:</p>
+<ul>
+  <li><strong>TrendAgent</strong> — LinearRegression + DeterministicProcess + Fourier seasonality terms</li>
+  <li><strong>MomentumAgent</strong> — XGBoostRegressor on lag + rolling + RSI + MACD features</li>
+  <li><strong>VolatilityAgent</strong> — XGBoostRegressor on Bollinger, realized vol, VIX features</li>
+  <li><strong>SequenceAgent</strong> — 2-layer LSTM on raw return sequences (window=30)</li>
+</ul>
+<p>Each agent has the same <code>fit(X_train, y_train)</code> / <code>predict(X_test)</code> interface — this uniformity is what lets the Hedge aggregator treat them interchangeably.</p>
+
+<hr>
+<p style="text-align:center; color:#8b8fa8; font-size:11px; margin-top:20px;">
+  Multi-Agent Financial Forecasting &nbsp;·&nbsp; Stamatics IIT Kanpur &nbsp;·&nbsp; 2026-06-18<br>
+  Mentor: Aayushman Tripathi &nbsp;·&nbsp; Generated by Claude Code
+</p>
+
+</body>
+</html>

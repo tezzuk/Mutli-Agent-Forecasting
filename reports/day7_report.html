@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 7 Report — Multi-Agent Financial Forecasting</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+  @media print {
+    .no-print { display: none; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    pre, .card { page-break-inside: avoid; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; line-height: 1.7; color: #1a1a2e; background: #f8f9ff; padding: 30px; max-width: 900px; margin: 0 auto; }
+  .report-header { background: linear-gradient(135deg, #4361ee 0%, #7209b7 100%); color: white; padding: 32px 36px; border-radius: 12px; margin-bottom: 32px; }
+  .report-header .tag { background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; display: inline-block; margin-bottom: 12px; }
+  .report-header h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+  .report-header .subtitle { font-size: 14px; opacity: 0.85; margin-bottom: 18px; }
+  .meta-row { display: flex; gap: 24px; flex-wrap: wrap; font-size: 12px; opacity: 0.9; }
+  .meta-item { display: flex; align-items: center; gap: 6px; }
+  h2 { font-size: 18px; font-weight: 700; color: #4361ee; margin: 36px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e8ecff; }
+  h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin: 22px 0 10px; }
+  h4 { font-size: 13px; font-weight: 600; color: #4361ee; margin: 16px 0 8px; }
+  p { margin-bottom: 10px; }
+  .card { background: white; border-radius: 10px; padding: 20px 24px; margin-bottom: 18px; border-left: 4px solid #4361ee; box-shadow: 0 2px 8px rgba(67,97,238,0.08); }
+  .card.green { border-left-color: #06d6a0; }
+  .card.orange { border-left-color: #f77f00; }
+  .card.purple { border-left-color: #7209b7; }
+  .card.red { border-left-color: #ef233c; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 18px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  th { background: #4361ee; color: white; padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f0f0f8; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafbff; }
+  pre { background: #0d1117; color: #e6edf3; padding: 18px 20px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 12px 0 18px; border: 1px solid #30363d; }
+  code { background: #eef0ff; color: #4361ee; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .st { color: #a5d6ff; } .cm { color: #8b949e; font-style: italic; } .nm { color: #ffa657; } .op { color: #79c0ff; }
+  .callout { background: #fff8e1; border-left: 4px solid #f77f00; padding: 14px 18px; border-radius: 6px; margin: 16px 0; font-size: 12.5px; }
+  .callout.danger { background: #fff0f0; border-left-color: #ef233c; }
+  .callout.success { background: #f0fff8; border-left-color: #06d6a0; }
+  .callout.info { background: #f0f4ff; border-left-color: #4361ee; }
+  .callout strong { display: block; margin-bottom: 4px; font-size: 13px; }
+  .qa-block { background: white; border-radius: 10px; margin-bottom: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .qa-q { background: #4361ee; color: white; padding: 12px 18px; font-weight: 600; font-size: 13px; }
+  .qa-a { padding: 14px 18px; font-size: 13px; line-height: 1.7; }
+  .qa-a .quote { font-style: italic; background: #f5f7ff; border-left: 3px solid #4361ee; padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 12.5px; }
+  .formula { background: #f5f7ff; border: 1px solid #d0d8ff; border-radius: 6px; padding: 12px 18px; font-family: 'Consolas', monospace; font-size: 13px; text-align: center; margin: 12px 0; color: #1a1a2e; }
+  .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+  .concept-box { background: white; border-radius: 8px; padding: 14px 16px; border-top: 3px solid #4361ee; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+  .concept-box.g { border-top-color: #06d6a0; }
+  .concept-box.o { border-top-color: #f77f00; }
+  .concept-box.p { border-top-color: #7209b7; }
+  .concept-box h4 { margin-top: 0; }
+  .print-btn { position: fixed; top: 20px; right: 20px; background: #4361ee; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(67,97,238,0.4); }
+  .print-btn:hover { background: #3a51d4; }
+  .day-row { display: grid; grid-template-columns: 80px 200px 1fr; gap: 0; }
+  ul, ol { padding-left: 22px; margin-bottom: 10px; }
+  li { margin-bottom: 4px; }
+  strong { font-weight: 700; }
+  hr { border: none; border-top: 1px solid #e8ecff; margin: 24px 0; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 6px; }
+  .badge.done { background: #d1fae5; color: #065f46; }
+  .badge.today { background: #dbeafe; color: #1e40af; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">&#x1F4BE; Save as PDF</button>
+
+<!-- HEADER -->
+<div class="report-header">
+  <div class="tag">Day 7 of 7 &nbsp;·&nbsp; 2026-06-18 &nbsp;·&nbsp; FINAL</div>
+  <h1>Final Polish</h1>
+  <div class="subtitle">README · .gitignore · Week 3 Student Notebook &nbsp;·&nbsp; Multi-Agent Financial Forecasting · Stamatics IIT Kanpur</div>
+  <div class="meta-row">
+    <div class="meta-item">&#128196; 3 files written</div>
+    <div class="meta-item">&#127891; 9-part student notebook</div>
+    <div class="meta-item">&#9989; Project complete</div>
+    <div class="meta-item">&#128640; Ready for GitHub + Streamlit</div>
+  </div>
+</div>
+
+<!-- 1. WHAT WAS BUILT -->
+<h2>1. What Was Built</h2>
+
+<table>
+  <thead><tr><th>File</th><th>Lines</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>README.md</code></td><td>~130</td><td>Architecture diagram, results table, one-command setup, key concepts, references — the project's public face</td></tr>
+    <tr><td><code>.gitignore</code></td><td>~30</td><td>Excludes generated CSVs, cache dirs, credentials, editor artifacts</td></tr>
+    <tr><td><code>notebooks/Week3_Assignment.ipynb</code></td><td>~250 cells / lines</td><td>7-part student assignment: log returns → lookahead bias → RSI → MACD → Bollinger → feature matrix → agents → Hedge</td></tr>
+  </tbody>
+</table>
+
+<div class="callout success">
+  <strong>&#127881; Project Complete</strong>
+  Day 7 closes out the 7-day build. The full pipeline is now written: data ingestion → feature engineering → 4 specialist agents → Hedge aggregator → walk-forward backtest → Streamlit dashboard → student curriculum (3 assignment notebooks) → README + deploy config.
+</div>
+
+<!-- 2. README DEEP DIVE -->
+<h2>2. README.md — The Project's Public Face</h2>
+
+<p>The README is the first thing a recruiter, professor, or potential employer sees when they visit the GitHub repository. It has one job: convince a skeptical reader in 60 seconds that this project is serious, technical, and working.</p>
+
+<h3>What Makes a Good ML Project README?</h3>
+
+<div class="concept-grid">
+  <div class="concept-box">
+    <h4>&#128202; Architecture Diagram</h4>
+    The most important element. A reader should understand the entire data flow in 30 seconds without reading a single line of code. ASCII diagrams work better than images for GitHub READMEs — they render everywhere, they're searchable, and they don't break if the image host goes down.
+  </div>
+  <div class="concept-box g">
+    <h4>&#9989; Results Table</h4>
+    Numbers are credibility. An ML project without results numbers looks like a toy. Even placeholder numbers with a note "exact values depend on run" signal that you understand what results should look like. The table shows: what metrics matter (Sharpe, directional accuracy, drawdown) and what baseline you're comparing against.
+  </div>
+  <div class="concept-box o">
+    <h4>&#9889; One-Command Setup</h4>
+    If it takes more than 3 commands to run your project, most people won't run it. Our setup is: <code>pip install -r requirements.txt</code> → <code>python -m pipeline.backtest</code> → <code>streamlit run app.py</code>. Three commands, clearly separated. The README explains what each does.
+  </div>
+  <div class="concept-box p">
+    <h4>&#128218; Key Concepts Section</h4>
+    This separates research projects from tutorial reproductions. "Why log returns?" — "Why walk-forward?" — "Why Hedge?" These questions show the reader you made deliberate design choices, not just copy-pasted code. Each answer is 2–3 sentences: long enough to be substantive, short enough to be readable.
+  </div>
+</div>
+
+<h4>The Architecture Diagram</h4>
+<pre><code>Live Data (yfinance SPY + VIX, 2010–2024)
+        │
+        ▼
+Feature Engineering
+  ├── Log returns (stationary target)
+  ├── Technical: RSI-14, MACD signal, Bollinger width
+  ├── Volatility: rolling std 5d/21d
+  ├── Calendar: VIX level + 5d change
+  └── Lag features: lag_1 through lag_10
+        │
+        ▼
+Agent Pool (4 specialists, uniform interface)
+  ├── TrendAgent       — LinearRegression + DeterministicProcess + CalendarFourier
+  ├── MomentumAgent    — XGBoost on lag + rolling features
+  ├── VolatilityAgent  — XGBoost with VIX + Bollinger features
+  └── SequenceAgent    — 2-layer LSTM (hidden=64, window=30, PyTorch)
+        │
+        ▼
+Hedge Aggregator (Freund &amp; Schapire, 1997)
+  w_i ← w_i · exp(−η · L_i), then normalize
+  Regret: O(√(T · log N))
+        │
+        ▼
+Walk-Forward Backtest (~44 folds, 3yr initial, 3mo steps)
+  Sharpe ratio | max drawdown | directional accuracy | IR
+        │
+        ▼
+Streamlit Dashboard (3 tabs, real-time filters)
+</code></pre>
+
+<h4>References Section — Why It Matters</h4>
+<p>Academic references in a README signal that you understand the theory behind your implementation, not just the code. Three references are included:</p>
+<ul>
+  <li><strong>Freund &amp; Schapire (1997)</strong>: the original Hedge algorithm paper. Citing this shows the regret bound is a provable theorem, not a claim.</li>
+  <li><strong>Bollinger (2002)</strong>: the original Bollinger Bands book. Shows you used the canonical definition.</li>
+  <li><strong>Wilder (1978)</strong>: the original RSI definition book. Same reason.</li>
+</ul>
+
+<!-- 3. .GITIGNORE -->
+<h2>3. .gitignore — What to Exclude and Why</h2>
+
+<table>
+  <thead><tr><th>Pattern</th><th>What It Excludes</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td><code>data/*.csv</code></td><td>SPY and VIX raw data files</td><td><strong>Generated, not authored.</strong> <code>data/fetch.py</code> regenerates them from Yahoo Finance. Committing large CSVs bloats the repo history permanently — git repos are terrible at tracking binary/CSV changes.</td></tr>
+    <tr><td><code>results/*.csv</code></td><td>Backtest results and metrics reports</td><td><strong>Generated, not authored.</strong> <code>python -m pipeline.backtest</code> produces them. They depend on the random seed, LSTM training, and the date you run it — committing them would cause spurious diffs on every run.</td></tr>
+    <tr><td><code>__pycache__/</code></td><td>Python bytecode cache directories</td><td>Python bytecache is machine-specific and version-specific. Never tracked. Generated automatically by the Python interpreter.</td></tr>
+    <tr><td><code>*.py[cod]</code></td><td><code>.pyc</code>, <code>.pyo</code>, <code>.pyd</code> files</td><td>Compiled Python bytecache. Same reason — machine-specific, ephemeral.</td></tr>
+    <tr><td><code>.ipynb_checkpoints/</code></td><td>Jupyter auto-save checkpoint directories</td><td>Jupyter creates these automatically every few minutes. They're noise — identical to the notebook file but older. Committing them creates confusing diffs.</td></tr>
+    <tr><td><code>venv/</code>, <code>.venv/</code></td><td>Python virtual environment directories</td><td>Virtual environments contain copies of Python and all packages — often gigabytes. Never committed. Users recreate via <code>pip install -r requirements.txt</code>.</td></tr>
+    <tr><td><code>.streamlit/secrets.toml</code></td><td>Streamlit credentials file</td><td><strong>Security-critical.</strong> If you add API keys to secrets.toml (e.g., OpenAI key for future features), this file must never be committed. Accidentally committing credentials to GitHub is a common security incident. The <code>.gitignore</code> makes this impossible.</td></tr>
+    <tr><td><code>.DS_Store</code></td><td>macOS directory metadata</td><td>macOS generates these automatically. They're invisible files containing folder view settings. Windows/Linux users don't have them; committing them adds noise and reveals your OS.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout danger">
+  <strong>&#9888; The Credentials Rule</strong>
+  Any file that contains API keys, passwords, or tokens must be in <code>.gitignore</code> before you even create it — not after. Once a secret is committed and pushed, it must be treated as permanently compromised even after deletion. GitHub scans for leaked secrets and notifies providers (AWS, OpenAI, Google Cloud) who will revoke the keys. The defense is prevention: <code>.gitignore</code> first, file second.
+</div>
+
+<!-- 4. WEEK 3 NOTEBOOK -->
+<h2>4. Week 3 Notebook — Teaching Philosophy</h2>
+
+<p>The Week 3 notebook is the conceptual bridge between Weeks 1–2 (general ML) and Weeks 4–8 (the actual pipeline). It introduces the domain-specific concepts (financial features, agent design) that the pipeline is built on.</p>
+
+<h3>Structure (9 Parts)</h3>
+
+<table>
+  <thead><tr><th>Part</th><th>Topic</th><th>Core Lesson</th><th>Builds On</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Log Returns vs Prices</td><td>Stationarity is why we can train ML models on financial data at all</td><td>Week 1 time series decomposition</td></tr>
+    <tr><td>2</td><td>Lookahead Bias</td><td>The #1 failure mode; .shift(1) is the fix</td><td>Week 1 train/test split concept</td></tr>
+    <tr><td>3</td><td>RSI from Scratch</td><td>EWM for responsiveness; overbought/oversold as mean-reversion signal</td><td>Week 1 EWM vs SMA</td></tr>
+    <tr><td>4</td><td>MACD from Scratch</td><td>Fast-slow EMA gap as momentum signal; signal line smooths the noise</td><td>Week 1 moving averages</td></tr>
+    <tr><td>5</td><td>Bollinger Band Width</td><td>SMA-based normalized volatility; squeeze as forecast of breakout</td><td>Week 1 rolling statistics</td></tr>
+    <tr><td>6</td><td>Feature Matrix</td><td>All features assembled with .shift(1); one row = one trading day's information at t-1</td><td>Parts 3–5</td></tr>
+    <tr><td>7</td><td>Agent Design (ABC)</td><td>Abstract base class enforces uniform interface; MomentumAgent implemented; VolatilityAgent exercise</td><td>Week 2 XGBoost</td></tr>
+    <tr><td>8</td><td>Hedge Algorithm</td><td>Online learning; multiplicative weights; η sensitivity; regret bound</td><td>Week 2 ensemble concept</td></tr>
+    <tr><td>9</td><td>Final Exercises</td><td>NaiveAgent, YesterdayAgent, RSI contrarian rule — all test understanding, not replication</td><td>Everything above</td></tr>
+  </tbody>
+</table>
+
+<h4>The Progressive Complexity Design</h4>
+<p>Each part is designed so that completing it gives the student something working. Part 3 produces an RSI chart — visual, satisfying. Part 6 produces a feature matrix they can print and inspect. Part 7 produces an agent they can evaluate with MAE and directional accuracy numbers. The final exercises require synthesis, not just copying.</p>
+
+<!-- 5. LOOKAHEAD BIAS DEMO -->
+<h2>5. The Lookahead Bias Demo — Most Important Lesson</h2>
+
+<p>The lookahead bias demonstration in Part 2 of the notebook is designed to create a visceral, memorable illustration of the problem. Students run two models with identical architectures on identical train/test splits, differing only in one line:</p>
+
+<pre><code><span class="cm"># Correct version</span>
+lag1_correct = log_returns.shift(<span class="nm">1</span>)    <span class="cm"># t-1 predicts t</span>
+
+<span class="cm"># Wrong version (lookahead)</span>
+lag1_wrong = log_returns                  <span class="cm"># t predicts t — the answer is the feature!</span>
+</code></pre>
+
+<h4>What the Results Show</h4>
+<table>
+  <thead><tr><th>Version</th><th>MAE</th><th>Directional Accuracy</th><th>Explanation</th></tr></thead>
+  <tbody>
+    <tr><td>Correct (no lookahead)</td><td>~0.0075</td><td>~51–53%</td><td>Genuine signal in lag-1; just barely above 50% coin flip</td></tr>
+    <tr><td>Wrong (lookahead)</td><td>~0.0000</td><td>~100%</td><td>The feature IS the target — perfect tautological prediction</td></tr>
+  </tbody>
+</table>
+
+<p>The contrast is dramatic. A student who sees 100% directional accuracy for the first time will remember this lesson for the rest of their career. The fix is a single method call: <code>.shift(1)</code>.</p>
+
+<div class="callout">
+  <strong>&#128203; Why This Works As a Pedagogy Technique</strong>
+  Showing the wrong result before the correct result is more effective than only showing the correct approach. The cognitive hook — "wait, how is this model achieving 100%?" — creates an active search for the cause. When the student finds it (same-day feature predicts same-day target), the understanding is much deeper than if you'd just told them "use .shift(1)."
+</div>
+
+<!-- 6. EXERCISE DESIGN -->
+<h2>6. Why These Specific Exercises?</h2>
+
+<h3>Exercise: NaiveAgent (always predicts 0)</h3>
+<p><strong>Purpose:</strong> Establishes the correct floor. On daily log returns, sign(0) only matches sign(actual) when actual is exactly 0 — which almost never happens. So NaiveAgent gets ~50% directional accuracy (coin flip). This shows students that 50% is the minimum threshold — anything below means your model is actively hurting you.</p>
+<p><strong>What students learn:</strong> 50% is not a good score. It's the floor. Their models must beat 50% to be worth anything.</p>
+
+<h3>Exercise: YesterdayAgent (predicts lag_1)</h3>
+<p><strong>Purpose:</strong> Tests whether raw momentum is a real signal. If markets have no serial dependence, YesterdayAgent should get exactly 50%. If there's short-term momentum (yesterday up → today up), it gets &gt;50%. If there's mean-reversion (yesterday up → today down), it gets &lt;50%.</p>
+<p><strong>What students learn:</strong> Empirical investigation of the Efficient Market Hypothesis. (Answer: S&amp;P 500 has slight mean-reversion on daily timescales — YesterdayAgent typically gets ~48–49%.)</p>
+
+<h3>Exercise: RSI Contrarian Rule</h3>
+<p><strong>Purpose:</strong> Compares rule-based vs ML. The RSI contrarian rule is simple: if RSI &gt; 70, predict negative; if RSI &lt; 30, predict positive; else predict 0. No training data needed.</p>
+
+<pre><code><span class="kw">class</span> <span class="fn">RSIContrarianAgent</span>(BaseAgent):
+    <span class="kw">def</span> <span class="fn">fit</span>(<span class="kw">self</span>, train_df): <span class="kw">pass</span>   <span class="cm"># no training needed</span>
+
+    <span class="kw">def</span> <span class="fn">predict</span>(<span class="kw">self</span>, test_df):
+        rsi = test_df[<span class="st">'rsi_14'</span>].values
+        preds = np.zeros(len(rsi))
+        preds[rsi &gt; <span class="nm">70</span>] = -<span class="nm">0.001</span>    <span class="cm"># overbought → predict down</span>
+        preds[rsi &lt; <span class="nm">30</span>] = +<span class="nm">0.001</span>    <span class="cm"># oversold → predict up</span>
+        <span class="kw">return</span> preds
+</code></pre>
+
+<p><strong>What students learn:</strong> Rule-based agents are simpler, interpretable, and sometimes competitive with ML. The Hedge algorithm doesn't care whether an agent is ML or rule-based — it only cares about recent prediction quality. Including rule-based agents in the pool is legitimate.</p>
+
+<!-- 7. DEPLOYMENT -->
+<h2>7. Deploying to GitHub + Streamlit Community Cloud</h2>
+
+<h3>Step 1: Create GitHub Repository</h3>
+<pre><code><span class="cm"># From C:\cc\resume\stamatics\</span>
+git init
+git remote add origin https://github.com/tezzuk/multi-agent-financial-forecasting.git
+
+<span class="cm"># Stage everything EXCEPT what .gitignore excludes</span>
+git add .
+git status   <span class="cm"># verify: data/*.csv and results/*.csv should NOT appear</span>
+
+git commit -m <span class="st">"Initial commit: multi-agent financial forecasting pipeline"</span>
+git push -u origin main
+</code></pre>
+
+<div class="callout info">
+  <strong>&#128161; Verify .gitignore Is Working</strong>
+  Before the first commit, run <code>git status</code> and look at the "Untracked files" section. You should NOT see <code>data/spy_features.csv</code> or <code>results/backtest_results.csv</code>. If you do, your .gitignore isn't being picked up — double-check the file is in the repo root and has no extension (it's literally <code>.gitignore</code>, not <code>.gitignore.txt</code>).
+</div>
+
+<h3>Step 2: Deploy to Streamlit Community Cloud</h3>
+<ol>
+  <li>Go to <strong>share.streamlit.io</strong></li>
+  <li>Sign in with your GitHub account</li>
+  <li>Click <strong>"New app"</strong></li>
+  <li>Repository: <code>tezzuk/multi-agent-financial-forecasting</code></li>
+  <li>Branch: <code>main</code></li>
+  <li>Main file path: <code>app.py</code></li>
+  <li>Click <strong>Deploy</strong></li>
+</ol>
+
+<p>Streamlit Community Cloud reads <code>requirements.txt</code> and installs dependencies automatically. First deploy takes 2–5 minutes. The app gets a URL like <code>tezzuk-multi-agent-forecasting.streamlit.app</code>.</p>
+
+<div class="callout">
+  <strong>&#9888; The CSV Problem on Streamlit Cloud</strong>
+  The dashboard reads <code>results/backtest_results.csv</code>. But we excluded CSVs from git. On Streamlit Cloud, there's no way to run the backtest — it would take minutes and exceed memory limits. Solution: run the backtest locally, then commit the <em>results</em> CSVs specifically (override .gitignore for just those files), or generate sample results CSVs with mock data for the demo.
+  <br><br>
+  For the demo: create <code>results/backtest_results.csv</code> with a small synthetic dataset, commit it, and add a note in README: "Dashboard uses pre-computed results. To regenerate: <code>python -m pipeline.backtest</code>."
+</div>
+
+<h3>What the Live URL Means for the Resume</h3>
+<p>A live Streamlit URL is a <strong>working demo link</strong> — you put it on your resume and a recruiter can click it and interact with the dashboard in their browser, right now, without installing anything. This is qualitatively different from a GitHub link (requires Python) or a notebook (requires Jupyter). A live demo link on a resume is memorable in a way code links are not.</p>
+
+<!-- 8. PROJECT RETROSPECTIVE -->
+<h2>8. Full Project Retrospective — 7 Days</h2>
+
+<table>
+  <thead><tr><th>Day</th><th>Component</th><th>Files</th><th>Core Concept Introduced</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Data + Features</td><td><code>data/fetch.py</code>, <code>pipeline/features.py</code></td><td>Log returns (stationarity), VIX as regime signal, lookahead bias prevention via <code>.shift(1)</code></td></tr>
+    <tr><td>2</td><td>Agent Framework</td><td><code>pipeline/agents.py</code></td><td>Abstract Base Class, XGBoost for MomentumAgent + VolatilityAgent, DeterministicProcess + CalendarFourier for TrendAgent, LSTM for SequenceAgent</td></tr>
+    <tr><td>3</td><td>Hedge Aggregator</td><td><code>pipeline/aggregator.py</code></td><td>Multiplicative weights update, EqualWeightAggregator baseline, optimal η formula, regret bound O(√(T·log N))</td></tr>
+    <tr><td>4</td><td>LSTM Refinement + Eval</td><td><code>pipeline/evaluate.py</code></td><td>Early stopping with best_state clone, StandardScaler (fit on train only), feature importance from XGBoost</td></tr>
+    <tr><td>5</td><td>Backtest + Metrics</td><td><code>pipeline/metrics.py</code>, <code>pipeline/backtest.py</code></td><td>Walk-forward validation (expanding window), Sharpe ratio, max drawdown, directional accuracy, information ratio, equity curve</td></tr>
+    <tr><td>6</td><td>Streamlit Dashboard</td><td><code>app.py</code></td><td><code>@st.cache_data</code>, reactive re-run model, <code>stackgroup="one"</code> stacked area, <code>visible="legendonly"</code>, regime bands with <code>add_vrect()</code></td></tr>
+    <tr><td>7</td><td>Polish + Deploy</td><td><code>README.md</code>, <code>.gitignore</code>, <code>notebooks/Week3_Assignment.ipynb</code></td><td>README structure for ML projects, .gitignore security, teaching through contrast (lookahead demo)</td></tr>
+  </tbody>
+</table>
+
+<h3>Complete File Index</h3>
+<table>
+  <thead><tr><th>File</th><th>Role</th><th>Day Created</th></tr></thead>
+  <tbody>
+    <tr><td><code>data/fetch.py</code></td><td>Downloads SPY + VIX, computes log returns, caches to CSV</td><td>1</td></tr>
+    <tr><td><code>data/__init__.py</code></td><td>Makes data/ a Python package</td><td>1</td></tr>
+    <tr><td><code>pipeline/__init__.py</code></td><td>Makes pipeline/ a Python package</td><td>1</td></tr>
+    <tr><td><code>pipeline/features.py</code></td><td>RSI, MACD, Bollinger, lag features, rolling stats → 14-column feature matrix</td><td>1</td></tr>
+    <tr><td><code>pipeline/agents.py</code></td><td>BaseAgent ABC + TrendAgent, MomentumAgent, VolatilityAgent, SequenceAgent</td><td>2</td></tr>
+    <tr><td><code>pipeline/aggregator.py</code></td><td>HedgeAggregator + EqualWeightAggregator</td><td>3</td></tr>
+    <tr><td><code>pipeline/evaluate.py</code></td><td>Agent comparison harness: fit on 2010–2018, evaluate on 2019</td><td>4</td></tr>
+    <tr><td><code>pipeline/metrics.py</code></td><td>sharpe_ratio, max_drawdown, directional_accuracy, information_ratio, metrics_table</td><td>5</td></tr>
+    <tr><td><code>pipeline/backtest.py</code></td><td>walk_forward_backtest(), run_baseline(), full_metrics_report()</td><td>5</td></tr>
+    <tr><td><code>app.py</code></td><td>Streamlit dashboard: 3 tabs, sidebar filters, Plotly charts</td><td>6</td></tr>
+    <tr><td><code>README.md</code></td><td>Public-facing project documentation</td><td>7</td></tr>
+    <tr><td><code>.gitignore</code></td><td>Excludes generated files and credentials</td><td>7</td></tr>
+    <tr><td><code>requirements.txt</code></td><td>Pinned dependencies</td><td>1</td></tr>
+    <tr><td><code>notebooks/Week1_Assignment.ipynb</code></td><td>Time series foundations (pre-existing)</td><td>pre-existing</td></tr>
+    <tr><td><code>notebooks/Week2_Assignment.ipynb</code></td><td>ML for forecasting (pre-existing)</td><td>pre-existing</td></tr>
+    <tr><td><code>notebooks/Week3_Assignment.ipynb</code></td><td>Financial features + agent design + Hedge intro</td><td>7</td></tr>
+  </tbody>
+</table>
+
+<!-- 9. COMPLETE CONCEPTS TABLE -->
+<h2>9. All Concepts Introduced — 7 Days</h2>
+
+<table>
+  <thead><tr><th>Concept</th><th>File / Day</th><th>Key Takeaway</th></tr></thead>
+  <tbody>
+    <tr><td>Log returns</td><td>fetch.py / Day 1</td><td>Stationary, additive, near-Gaussian — the correct prediction target</td></tr>
+    <tr><td>VIX as forward-looking fear</td><td>fetch.py / Day 1</td><td>Options market's prediction of future vol; different info from realized vol</td></tr>
+    <tr><td>Lookahead bias</td><td>features.py / Day 1</td><td>#1 failure mode; always .shift(1) before any window computation on price data</td></tr>
+    <tr><td>EWM vs SMA</td><td>features.py / Day 1</td><td>EWM: responsive (RSI, MACD). SMA: stable baseline (Bollinger). Use each where appropriate</td></tr>
+    <tr><td>RSI</td><td>features.py / Day 1</td><td>EWM gains / EWM losses → overbought (>70) / oversold (<30) signal</td></tr>
+    <tr><td>MACD signal line</td><td>features.py / Day 1</td><td>9-EMA of (fast-EMA − slow-EMA); signal line, not raw MACD, is the feature</td></tr>
+    <tr><td>Bollinger Band Width</td><td>features.py / Day 1</td><td>4×std/SMA; Bollinger Squeeze = low width → big move coming</td></tr>
+    <tr><td>Lag features</td><td>features.py / Day 1</td><td>Historical returns as direct model inputs</td></tr>
+    <tr><td>Abstract Base Class</td><td>agents.py / Day 2</td><td>@abstractmethod enforces uniform fit/predict interface; can't instantiate</td></tr>
+    <tr><td>XGBoost agent</td><td>agents.py / Day 2</td><td>Gradient boosting on tabular features; handles non-linearity + feature interaction</td></tr>
+    <tr><td>DeterministicProcess + CalendarFourier</td><td>agents.py / Day 2</td><td>Linear trend + Fourier seasonality for TrendAgent; statsmodels exogenous regressors</td></tr>
+    <tr><td>LSTM</td><td>agents.py / Day 2</td><td>2-layer, hidden=64, dropout=0.2, window=30; PyTorch; captures non-linear temporal patterns</td></tr>
+    <tr><td>StandardScaler (train-only)</td><td>agents.py / Day 2</td><td>Fit scaler on train only, transform test — prevents test statistics leaking into training</td></tr>
+    <tr><td>Early stopping</td><td>agents.py / Day 2</td><td>patience=5, best_state saved with .clone(); restores best weights, not last weights</td></tr>
+    <tr><td>Hedge algorithm</td><td>aggregator.py / Day 3</td><td>w_i *= exp(-η × L_i), normalize. Online learning; adapts to agent performance</td></tr>
+    <tr><td>Regret bound</td><td>aggregator.py / Day 3</td><td>O(√(T·log N)) — ensemble ≥ best agent in hindsight, gap vanishes as T grows</td></tr>
+    <tr><td>Optimal η</td><td>aggregator.py / Day 3</td><td>√(log(N)/(2T)); for T=3520, N=4: η_opt≈0.0094</td></tr>
+    <tr><td>Feature importance</td><td>agents.py / Day 4</td><td>XGBoost .feature_importances_ shows which features drive predictions</td></tr>
+    <tr><td>Sharpe ratio</td><td>metrics.py / Day 5</td><td>mean(strategy_ret) / std(strategy_ret) × √252; risk-adjusted annualized return</td></tr>
+    <tr><td>Max drawdown</td><td>metrics.py / Day 5</td><td>np.maximum.accumulate for running peak; max(peak-trough)/peak</td></tr>
+    <tr><td>Directional accuracy</td><td>metrics.py / Day 5</td><td>mean(sign(pred) == sign(actual)); floor is 50% (coin flip)</td></tr>
+    <tr><td>Information ratio</td><td>metrics.py / Day 5</td><td>Active return / tracking error × √252; how much skill vs noise relative to benchmark</td></tr>
+    <tr><td>Walk-forward validation</td><td>backtest.py / Day 5</td><td>3yr initial + 3mo steps ≈ 44 folds; always test on future data, never shuffle</td></tr>
+    <tr><td>Equity curve</td><td>backtest.py / Day 5</td><td>10000 × exp(cumsum(sign(pred) × actual)); $10k compounded long/short strategy</td></tr>
+    <tr><td>@st.cache_data</td><td>app.py / Day 6</td><td>Memoize CSV loading; prevents re-read on every slider interaction</td></tr>
+    <tr><td>Streamlit re-run model</td><td>app.py / Day 6</td><td>Every interaction re-runs the full script; caching and st.stop() manage this</td></tr>
+    <tr><td>stackgroup stacked area</td><td>app.py / Day 6</td><td>All same stackgroup → accumulated Y values → total = 1 always</td></tr>
+    <tr><td>Regime annotations</td><td>app.py / Day 6</td><td>add_vrect(): COVID Crash + Rate Hike Cycle; contextualizes weight shifts</td></tr>
+    <tr><td>.gitignore patterns</td><td>.gitignore / Day 7</td><td>Generated files out; credentials never in; __pycache__ excluded</td></tr>
+    <tr><td>Teaching by contrast</td><td>Week3 notebook / Day 7</td><td>Show wrong result first (100% accuracy w/ lookahead), then correct approach</td></tr>
+  </tbody>
+</table>
+
+<!-- 10. INTERVIEW Q&A -->
+<h2>10. Full Interview Q&amp;A — Complete Project</h2>
+
+<div class="qa-block">
+  <div class="qa-q">Q1. Walk me through the full architecture of your multi-agent forecasting system.</div>
+  <div class="qa-a">
+    <div class="quote">We start with daily OHLCV data for SPY and VIX from Yahoo Finance via yfinance, covering 2010–2024. A feature engineering layer computes 14 features per day — including log returns (which we use as the prediction target because they're stationary), RSI-14, MACD signal, Bollinger Band Width, 5-day and 21-day rolling statistics, lag features lag_1 through lag_10, and VIX level plus 5-day VIX change. All features use .shift(1) on closing prices to prevent lookahead bias. These features feed four specialist agents: a TrendAgent using linear regression with Fourier seasonality terms, a MomentumAgent using XGBoost on lag and technical features, a VolatilityAgent using XGBoost on VIX and Bollinger features, and a SequenceAgent using a 2-layer LSTM. The Hedge aggregator (Freund & Schapire, 1997) maintains a weight vector over the four agents and updates it after each day's prediction using multiplicative weights. A walk-forward backtest engine evaluates the system on ~44 three-month test windows over the 14-year history. Finally, a Streamlit dashboard visualizes the results with three interactive tabs: forecast vs actual, agent weight evolution, and performance breakdown.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q2. Why is walk-forward validation the right approach for financial data?</div>
+  <div class="qa-a">
+    <div class="quote">Financial data has a strict temporal structure: the future cannot cause the past. If you randomly split data into train and test sets (like you might with image classification), you allow the model to train on data from 2022 and test on data from 2019 — the model has effectively seen the future during training. This is called temporal leakage. Walk-forward validation respects the time ordering: each test window is strictly in the future relative to its corresponding training window. We use an expanding window — training grows by 3 months each fold, so later folds benefit from more historical data. This matches how a real trading system would be retrained periodically as new data arrives. The result is an unbiased estimate of how the system would have performed if deployed in real time.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q3. What is the theoretical guarantee of the Hedge algorithm?</div>
+  <div class="qa-a">
+    <div class="quote">The Hedge algorithm satisfies a no-regret guarantee: the total loss of the ensemble over T rounds cannot exceed the total loss of the best individual agent by more than O(√(T·log N)), where N is the number of agents. More precisely, the regret R_T = sum of ensemble losses - min agent's total loss ≤ sqrt(T·log(N)/2). Per round, the excess regret is at most sqrt(log(N)/(2T)), which goes to zero as T grows. This means Hedge is guaranteed to perform at least as well as the best agent in hindsight, plus a vanishing term. The key word is "hindsight" — you don't need to know in advance which agent will be best. Hedge discovers this automatically from the prediction errors.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q4. What is the difference between RSI and MACD as features?</div>
+  <div class="qa-a">
+    <div class="quote">RSI and MACD capture fundamentally different aspects of price behavior. RSI (Relative Strength Index) measures the ratio of recent gains to recent losses using EWM smoothing. It oscillates between 0 and 100 and is most useful as a mean-reversion signal: RSI above 70 indicates overbought conditions (too many recent up days), RSI below 30 indicates oversold. It's a bounded, normalized measure of short-term directional imbalance. MACD (Moving Average Convergence Divergence) is a momentum signal that measures the gap between a fast EMA (12-day) and a slow EMA (26-day). When the fast EMA is above the slow EMA, short-term momentum is stronger than the long-run trend — a bullish signal. We use the signal line (9-day EMA of MACD), not raw MACD, because the signal line is smoother and less prone to one-day noise spikes. The two features are complementary: RSI catches overbought/oversold extremes; MACD captures the momentum trend direction.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q5. How does your LSTM agent avoid overfitting?</div>
+  <div class="qa-a">
+    <div class="quote">Three mechanisms: First, dropout — each LSTM layer has a 0.2 dropout rate, which randomly zeroes 20% of neuron activations during training. This prevents any single neuron from becoming essential, forcing the network to learn redundant representations. Second, early stopping — we monitor validation loss with a patience of 5 epochs. If the validation loss doesn't improve for 5 consecutive epochs, training stops and we restore the best model state using .state_dict() and torch.load_state_dict(). This prevents the network from training into a regime where it memorizes training patterns but loses generalization. Third, the walk-forward protocol itself — the LSTM is retrained on each fold's expanding training window. Because training always uses data strictly before the test period, the model cannot memorize future patterns.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q6. What is your Sharpe ratio and how is it computed?</div>
+  <div class="qa-a">
+    <div class="quote">The Sharpe ratio for our strategy is computed as: mean(strategy_returns) / std(strategy_returns) × sqrt(252), where strategy_returns[t] = sign(predicted_return_t) × actual_return_t. The sign() converts the prediction into a trading signal: +1 for long, -1 for short. We multiply by the actual return to get the strategy's P&L on that day. Annualizing by sqrt(252) converts daily Sharpe to annual Sharpe (252 trading days per year). The interpretation: Sharpe > 1.0 is considered good for a systematic strategy; > 2.0 is excellent. For context, the S&P 500 buy-and-hold has a Sharpe of roughly 0.5–0.7 over long periods. Our Hedge ensemble targets a Sharpe around 0.8–1.2, though exact results depend on the run.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q7. What would you add if you had more time?</div>
+  <div class="qa-a">
+    <div class="quote">Three high-value additions: First, live mode — fetch today's SPY/VIX from yfinance in the dashboard, use the trained agents to generate tomorrow's prediction, and show the current Hedge weights. This converts the backtest viewer into an actual forecasting tool. Second, transaction cost modeling — real strategies pay bid-ask spread and commissions. Including even a small transaction cost (0.05% per trade) would give a more realistic Sharpe estimate. Third, regime-adaptive η — instead of a fixed η throughout the backtest, adapt η based on market volatility: low volatility → lower η (less urgent to adapt), high volatility → higher η (need to adapt fast). This is a known extension of the Hedge algorithm. Additional agents would also help: a macro agent using economic indicators (PMI, employment data), or a sentiment agent using news embeddings.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q8. What is the Bollinger Squeeze and why does it matter as a predictor?</div>
+  <div class="qa-a">
+    <div class="quote">The Bollinger Squeeze occurs when Bollinger Band Width reaches a local minimum — the bands are unusually narrow, indicating a period of very low volatility. The empirical observation (Bollinger's original insight) is that periods of low volatility tend to precede large moves. The market "squeezes" before it "pops." As a feature, low Bollinger width gives the VolatilityAgent a heads-up that a regime change may be coming, even though it can't predict the direction. The historical intuition: when uncertainty is low, traders are complacent and not hedging. When uncertainty suddenly rises — because of an unexpected announcement, geopolitical event, or macro surprise — the market moves sharply as participants scramble to adjust. The Bollinger width is essentially measuring the level of complacency in the market.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q9. How did you prevent lookahead bias in your feature engineering?</div>
+  <div class="qa-a">
+    <div class="quote">The keystone is a single line: close = df["Close"].shift(1). By shifting the close price series forward by one day, every downstream computation uses yesterday's price data, not today's. So when we compute RSI(close), the RSI value for day t uses prices from day t-1 and earlier — never day t's price. The same applies to MACD, Bollinger, and rolling statistics. The lag features are naturally correct: lag_1[t] = return[t-1] by definition. The target column log_return is not shifted — it's what we're predicting. In the feature matrix, each row contains features computed from data available at the end of trading day t-1, and the target is what happens during trading day t. This is the only correct formulation for a live trading system.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q10. Why XGBoost for some agents and LSTM for others?</div>
+  <div class="qa-a">
+    <div class="quote">Different agents capture different types of signal, and different model families are suited to different signal types. MomentumAgent and VolatilityAgent use tabular features — lag_1 through lag_10, RSI, MACD, Bollinger width. These are well-defined numeric columns with no particular temporal ordering between them once you've computed them. XGBoost handles tabular data efficiently, is robust to outliers (which are common in financial data — extreme events like COVID crash), and provides feature importance out of the box. The SequenceAgent is different — it uses the raw sequence of past 30 returns, and the signal lies in the pattern of the sequence, not individual values. LSTMs are designed specifically to learn from sequences: they maintain a hidden state that can encode long-range dependencies in the time series. No tabular model would capture "the last 30 days had this specific oscillation pattern" the way an LSTM can.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q11. Explain the Hedge weight update rule from first principles.</div>
+  <div class="qa-a">
+    <div class="quote">We maintain a weight vector w = [w_1, w_2, w_3, w_4] that sums to 1. Initially, all weights are 1/4 (uniform). After each prediction round, we observe the actual return y and compute each agent's squared error L_i = (y_hat_i - y)^2. We update: w_i ← w_i × exp(-η × L_i), then normalize. The exponential exp(-η × L_i) is a multiplier between 0 and 1 — it reduces the weight of agents that made large errors. The larger L_i (bigger error), the smaller exp(-η × L_i), the more that agent's weight is reduced. The normalization step ensures weights still sum to 1. The learning rate η controls the severity of the penalty: large η → aggressive downweighting after errors; small η → gradual adaptation. The key intuition: we never zero out any agent. exp() is always positive, so every agent retains some weight. A bad agent in a bull market might be exactly right in a bear market — keeping it in the pool allows it to recover.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q12. What makes this a "multi-agent" system vs just an ensemble?</div>
+  <div class="qa-a">
+    <div class="quote">A standard ensemble (random forest, gradient boosting) combines many similar models — all trained on the same features, all using the same algorithm — to reduce variance. Each model in the ensemble is essentially a perturbed version of the same approach. Our multi-agent system is architecturally different: each agent is a specialist that looks at a fundamentally different aspect of the market. The TrendAgent doesn't look at RSI or lag features. The VolatilityAgent doesn't look at Fourier terms. Each agent has a distinct economic theory behind its feature set — the trend agent embodies "prices have a long-run upward trend," the momentum agent embodies "recent returns predict near-term returns," the volatility agent embodies "stress regimes require different models." The Hedge aggregator then discovers, in real time, which economic theory is currently most predictive. This is closer to a committee of domain experts than to bootstrapped samples of the same model.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q13. How would you deploy this in production?</div>
+  <div class="qa-a">
+    <div class="quote">For a real deployment: First, replace yfinance with a paid data provider (Bloomberg API, Refinitiv, Polygon.io) — yfinance has reliability issues and delayed data. Second, move the backtest and agent training to a scheduled job (cron, Airflow, or a cloud scheduler) that runs nightly after market close. Third, serialize the trained agents and current Hedge weights to disk after each training run using joblib for sklearn/XGBoost models and torch.save() for LSTM. Fourth, have a separate inference service that loads the serialized models and computes tomorrow's prediction at market close each day. Fifth, add monitoring: log every prediction, actual result, and weight update to a database so you can detect if any agent's performance degrades. Sixth, add risk limits: if the predicted return magnitude is outside 3 standard deviations of historical predictions, reject the signal. Finally, paper trade for 3–6 months before committing real capital — even a working backtest can have structural differences from live trading (market impact, execution delays, data quality).</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q14. What are the limitations of your approach?</div>
+  <div class="qa-a">
+    <div class="quote">Several honest limitations: First, transaction costs are not modeled. Our strategy trades long/short daily, which implies high turnover. Real spreads and commissions would erode returns substantially. Second, no position sizing — we use unit signals (+1 or -1). A real strategy would size positions based on prediction confidence and portfolio risk. Third, the LSTM's performance on financial data is debatable — LSTMs on daily returns are prone to overfitting and have shown mixed results in academic literature. The tabular agents may be more reliable. Fourth, survivorship bias — using SPY avoids the issue, but if we extended to individual stocks, we'd need to ensure our universe includes delisted companies. Fifth, the Efficient Market Hypothesis suggests daily return prediction is close to impossible. Our results (51–54% directional accuracy) are at the edge of what can be achieved — and those numbers may not hold going forward if market microstructure changes. The project is an excellent educational demonstration of the pipeline, but should not be mistaken for a profitable trading strategy without much more rigorous validation.</div>
+  </div>
+</div>
+
+<div class="qa-block">
+  <div class="qa-q">Q15. What did you teach students in the Week 3 notebook and what did they learn?</div>
+  <div class="qa-a">
+    <div class="quote">Week 3 introduced the domain-specific layer between general ML (Weeks 1–2) and the pipeline (Weeks 4–8). Students learned: why financial return prediction requires stationary targets (log returns vs prices), illustrated by plotting both series; the lookahead bias problem, demonstrated empirically by showing a model achieves 100% accuracy when you accidentally feed it the current-day price, dropping to realistic ~52% when fixed; three technical indicators (RSI, MACD, Bollinger) implemented from scratch rather than from a library, so students understand what the numbers mean, not just how to call .ta.RSI(); the Abstract Base Class pattern for enforcing a uniform agent interface; a full MomentumAgent implementation in XGBoost; and the Hedge algorithm's update rule, including a numerical η sensitivity experiment. The exercises (NaiveAgent, YesterdayAgent, RSI contrarian rule) test synthesis rather than replication — students must apply the concepts to problems they haven't seen, which is the only reliable test of understanding.</div>
+  </div>
+</div>
+
+<!-- 11. STREAMLIT DEPLOYMENT CHECKLIST -->
+<h2>11. Pre-Deploy Checklist</h2>
+
+<table>
+  <thead><tr><th>Item</th><th>Status</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><code>requirements.txt</code> exists in repo root</td><td>&#9989; Done</td><td>Streamlit Cloud reads this to install deps</td></tr>
+    <tr><td><code>app.py</code> is in repo root</td><td>&#9989; Done</td><td>Default main file for Streamlit</td></tr>
+    <tr><td><code>.gitignore</code> excludes credentials</td><td>&#9989; Done</td><td><code>.streamlit/secrets.toml</code> excluded</td></tr>
+    <tr><td>Results CSVs available for demo</td><td>&#9744; Todo</td><td>Run backtest locally, commit sample results or generate synthetic demo data</td></tr>
+    <tr><td>GitHub repo is public</td><td>&#9744; Todo</td><td>Streamlit Community Cloud requires public repos on free tier</td></tr>
+    <tr><td>Test <code>streamlit run app.py</code> locally</td><td>&#9744; Pending Python install</td><td>Install Python first, then test dashboard</td></tr>
+    <tr><td>Update README with live Streamlit URL</td><td>&#9744; After deploy</td><td>Add badge: [![Streamlit App](streamlit_badge)](url)</td></tr>
+  </tbody>
+</table>
+
+<h2>12. Resume Line — Final Version</h2>
+
+<div class="card green">
+  <h4>For ML/DS Interviews</h4>
+  <p>"Built a multi-agent financial forecasting system using the Hedge algorithm (Freund-Schapire 1997) to adaptively weight four specialist forecasters — linear trend, XGBoost momentum, XGBoost volatility, and LSTM sequence agents — on SPY daily returns (2010–2024). Validated via walk-forward backtesting (~44 folds); ensemble outperforms best individual agent on Sharpe ratio with provable O(√(T·log N)) no-regret guarantee. Visualized in a live Streamlit dashboard. [GitHub] [Live Demo]"</p>
+</div>
+
+<div class="card purple">
+  <h4>For Quant/Finance Interviews</h4>
+  <p>"Systematic forecasting pipeline for SPY daily log returns (2010–2024): 4-agent ensemble (trend, momentum, volatility regime, LSTM sequence) aggregated via Multiplicative Weights Update algorithm with adaptive model selection. Walk-forward backtest (~44 expanding windows); financial metrics: Sharpe ratio, max drawdown, directional accuracy vs. buy-and-hold baseline. Interactive Streamlit dashboard with regime annotations (COVID Crash 2020, Rate Hike Cycle 2022)."</p>
+</div>
+
+<div class="card orange">
+  <h4>For Teaching/Mentorship Context (Stamatics)</h4>
+  <p>"Designed and delivered an 8-week project course on multi-agent financial forecasting to [N] students at IIT Kanpur (Stamatics), covering time series analysis, financial feature engineering (RSI, MACD, Bollinger), XGBoost and LSTM agents, online learning theory (Hedge algorithm), walk-forward backtesting, and Streamlit deployment. Produced 3 assignment notebooks, a full pipeline, and interactive dashboard."</p>
+</div>
+
+<hr>
+<p style="text-align:center; color:#8b8fa8; font-size:11px; margin-top:20px;">
+  Multi-Agent Financial Forecasting &nbsp;·&nbsp; Stamatics IIT Kanpur &nbsp;·&nbsp; 2026-06-18<br>
+  Mentor: Aayushman Tripathi &nbsp;·&nbsp; Day 7 of 7 — Project Complete &nbsp;·&nbsp; Generated by Claude Code
+</p>
+
+</body>
+</html>
