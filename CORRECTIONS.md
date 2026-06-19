@@ -29,6 +29,8 @@
 | 8 | Streamlit serves stale CSVs after regeneration | Caching | `4eea3ae` |
 | 9 | **Hedge collapses onto one agent (no adaptivity)** | **Algorithm** | `d78bc07` |
 | 10 | **Hedge loss (MSE) misaligned with trading P&L** | **Methodology** | `31ebdf0` |
+| 10b | Directional loss tested → didn't hold → reverted to MSE | Methodology (negative result) | revert |
+| 11 | No fixed seed → results not reproducible | Reproducibility | seed |
 
 Bold = substantive findings worth talking about in an interview. The rest are
 ordinary "make it run / make it deploy" fixes.
@@ -332,6 +334,55 @@ honest one to give.
 
 ---
 
+### Correction 10b — Directional loss was a tested hypothesis that did NOT hold; reverted to MSE
+**File:** `pipeline/backtest.py` (default `loss_mode`) · **Commit:** `<reverted to mse>`
+
+**What we expected:** weighting agents by realized P&L (Correction 10) should concentrate
+the ensemble on agents that trade profitably and lift its Sharpe toward the best agent.
+
+**What actually happened:** the directional run came in *lower* (Hedge Sharpe 0.192) than
+the MSE run (0.368). Two reasons:
+1. **Daily direction is near-random (~50–54%).** Weighting agents by *who called yesterday
+   right* tracks recent **luck**, not skill — the skill gap between agents is tiny and the
+   day-to-day outcome is mostly noise. MSE, though misaligned with P&L, at least produces a
+   *stable* allocation.
+2. **The comparison was confounded** (see Correction 11) — without a fixed seed the LSTM
+   differed between runs (SequenceAgent 0.884 vs 0.698), so part of the gap was training
+   noise, not the loss function.
+
+**Decision:** revert the default to `loss_mode="mse"` (η=0.2). `"directional"` is kept in
+the code as a documented alternative for teaching. This is a genuine negative result: the
+"obvious" objective-alignment fix ran into a subtler problem — *the signal you'd align to is
+itself too noisy at daily frequency.*
+
+**Lesson:** aligning your learning objective with your real objective is correct in
+principle, but only helps if the real objective carries a learnable signal. At daily
+frequency it largely doesn't.
+
+---
+
+### Correction 11 — No fixed random seed → results not reproducible
+**File:** `pipeline/agents.py` (SequenceAgent.fit) · **Commit:** `<seed>`
+
+**Symptom:** Every backtest produced different numbers; SequenceAgent's Sharpe wandered
+between ~0.70 and ~0.88 across identical runs. This made it impossible to compare design
+changes (e.g. MSE vs directional loss) — any difference could be training noise.
+
+**Root cause:** the LSTM (PyTorch weight init + training) used no fixed seed, so each
+`fit()` produced a different network.
+
+**Fix:** seed at the start of `SequenceAgent.fit()`:
+```python
+torch.manual_seed(0)
+np.random.seed(0)
+```
+
+**Lesson:** reproducibility is a prerequisite for *any* honest A/B comparison. Set the seed
+before you start drawing conclusions from metric differences — otherwise you're reading
+noise.
+
+---
+
 ## The metrics, run by run (how the numbers evolved)
 
 | Run | Key change | Hedge Sharpe | Hedge vs EqualWeight | SequenceAgent | Weight chart |
@@ -339,11 +390,14 @@ honest one to give.
 | 1 | original (after Phase A only) | 0.215 | **identical** (0.215) | 0.620 Sharpe / 28.5% dir (artifact) | flat 25/25/25/25 |
 | 2 | + η normalize, LSTM padding, epochs | 0.871 | 0.871 vs 0.229 ✓ | 0.822 / 54.0% (honest) | collapses to 100% Sequence |
 | 3 | + Fixed-Share | 0.368 | 0.368 vs 0.200 ✓ | 0.884 / 54.3% | adaptive, all 4 breathing ✓ |
-| 4 | + directional (P&L) loss | *re-run pending* | — | — | — |
+| 4 | + directional (P&L) loss | 0.192 | 0.192 vs 0.145 ✓ | 0.698 / 53.9% | adaptive ✓ (but Hedge regressed) |
+| 5 | revert to MSE **+ fixed seed** | *re-run pending* | — | — | reproducible from here on |
 
-(Runs 2–4 differ slightly between executions because the LSTM is stochastic — no fixed
-seed — so absolute Sharpe values wander by ~0.05–0.1 run to run. The *structural* findings
-are stable.)
+(Runs 2–4 differed between executions because the LSTM had no fixed seed — absolute Sharpe
+wandered ~0.05–0.1 run to run, which is exactly why Correction 11 adds a seed. From Run 5
+onward the numbers are reproducible. The *structural* findings were stable throughout:
+Hedge > Equal Weight always; Buy & Hold is hard to beat; the technical-indicator agents are
+coin flips.)
 
 ---
 

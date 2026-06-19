@@ -203,6 +203,12 @@ class SequenceAgent(BaseAgent):
         return np.array(X, dtype=np.float32), np.array(y, dtype=np.float32)
 
     def fit(self, train_df: pd.DataFrame) -> None:
+        # Fixed seed → reproducible LSTM. Without this, every backtest trains a
+        # different network, so run-to-run Sharpe wanders by ~0.1 and you can't
+        # tell a real effect (e.g. a loss-function change) from training noise.
+        torch.manual_seed(0)
+        np.random.seed(0)
+
         returns = train_df["log_return"].values.reshape(-1, 1)
         scaled = self._scaler.fit_transform(returns).flatten()
 

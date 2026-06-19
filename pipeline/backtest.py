@@ -149,11 +149,13 @@ if __name__ == "__main__":
     df  = build_feature_matrix(raw)
 
     agents = [TrendAgent(), MomentumAgent(), VolatilityAgent(), SequenceAgent(epochs=25)]
-    # loss_mode="directional": weight agents by realized P&L (not MSE) so the ensemble
-    # rewards correct *direction* — the thing that actually drives returns. eta scales
-    # the update; alpha (Fixed-Share) keeps every agent revivable for regime adaptation.
-    aggregator = HedgeAggregator(n_agents=len(agents), eta=0.5, alpha=0.05,
-                                 loss_mode="directional")
+    # loss_mode="mse": weight agents by predictive accuracy (mean-normalized squared
+    # error). We also tested loss_mode="directional" (P&L-aligned), but daily direction
+    # is near-random, so that loss chased noise and did not robustly help — see
+    # CORRECTIONS.md. MSE gives a stable allocation that beats naive equal-weighting.
+    # eta scales the update; alpha (Fixed-Share) keeps every agent revivable.
+    aggregator = HedgeAggregator(n_agents=len(agents), eta=0.2, alpha=0.05,
+                                 loss_mode="mse")
 
     print("Running walk-forward backtest (this may take a few minutes)...")
     results = walk_forward_backtest(agents, aggregator, df,

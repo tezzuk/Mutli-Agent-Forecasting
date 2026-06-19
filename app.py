@@ -99,10 +99,10 @@ active_agents = [a for a in AGENT_NAMES
 # Eta info
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Hedge config (info)**")
-st.sidebar.info("Loss = realized P&L (directional), not MSE — so agents are weighted "
-                "by whether they call direction right, the thing that drives returns. "
-                "η=0.5 scales the update; Fixed-Share α=0.05 keeps every agent "
-                "revivable so the ensemble stays regime-adaptive instead of collapsing.")
+st.sidebar.info("Hedge weights agents by predictive accuracy (mean-normalized MSE), "
+                "η=0.2. Fixed-Share α=0.05 mixes a uniform component back each step so "
+                "no agent dies and the ensemble stays regime-adaptive. (A P&L-aligned "
+                "directional loss was tested but chased daily noise — see CORRECTIONS.md.)")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.title("📈 Multi-Agent Financial Forecasting")
