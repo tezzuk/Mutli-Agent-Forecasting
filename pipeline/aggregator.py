@@ -18,10 +18,12 @@ class HedgeAggregator:
     Interpretation: cumulative loss of ensemble <= best agent in hindsight + O(sqrt(T log N))
     """
 
-    def __init__(self, n_agents: int, eta: float = 0.2, alpha: float = 0.05):
+    def __init__(self, n_agents: int, eta: float = 0.2, alpha: float = 0.05,
+                 loss_mode: str = "directional"):
         self.n_agents = n_agents
         self.eta = eta
         self.alpha = alpha                            # Fixed-Share mixing rate
+        self.loss_mode = loss_mode                    # "directional" (P&L) or "mse"
         self.weights = np.ones(n_agents) / n_agents   # start uniform
         self.weight_history: list[np.ndarray] = []    # one entry per update step
         self.loss_history: list[np.ndarray] = []
@@ -35,18 +37,32 @@ class HedgeAggregator:
         Multiplicative weights update.
         Agents that predicted poorly get their weights reduced exponentially.
 
-        Scale-invariance: raw squared-error losses on daily log returns are tiny
-        (~1e-4). With those, exp(-eta * loss) ≈ 1 for any sane eta and the weights
-        never move — the algorithm becomes a no-op equal-weight average. We therefore
-        normalize each step's losses by their mean across agents, so the update
-        depends only on *relative* agent performance and eta has a meaningful,
-        unit-independent effect. (Standard practice for online learning when the
-        loss scale is not naturally in [0, 1].)
+        Loss alignment — the crux of the whole system:
+          * "mse": squared prediction error. The textbook Hedge loss, but on daily
+            returns it rewards predicting ~0 (which every agent does) and ignores
+            direction entirely — so the weights barely separate the agents and don't
+            track who actually trades profitably.
+          * "directional" (default): the loss is the agent's *negative P&L* for the
+            day, -sign(pred) * actual. This aligns the online-learning objective with
+            the financial objective: agents that call direction right (make money) are
+            up-weighted; coin-flippers are starved. This is what makes the ensemble
+            concentrate on the genuinely useful agents.
+
+        Either way we normalize each step's losses to a comparable [0, 1]-ish scale so
+        a single eta has a meaningful, unit-independent effect (raw squared log-return
+        losses are ~1e-4, which would make the update a no-op).
         """
         preds = np.array(predictions, dtype=float)
-        losses = (preds - actual) ** 2                        # squared error per agent
-        scale = losses.mean() + 1e-12                         # per-step loss scale
-        norm_losses = losses / scale                          # relative, scale-free
+
+        if self.loss_mode == "directional":
+            pnl = np.sign(preds) * actual                     # profit if you follow agent i
+            losses = -pnl                                     # lower loss = more profit
+            lo, hi = losses.min(), losses.max()
+            norm_losses = (losses - lo) / (hi - lo + 1e-12)   # per-step min-max → [0, 1]
+        else:  # "mse"
+            losses = (preds - actual) ** 2
+            scale = losses.mean() + 1e-12
+            norm_losses = losses / scale
 
         # 1) Multiplicative weights (Hedge) penalty
         self.weights *= np.exp(-self.eta * norm_losses)

@@ -149,9 +149,11 @@ if __name__ == "__main__":
     df  = build_feature_matrix(raw)
 
     agents = [TrendAgent(), MomentumAgent(), VolatilityAgent(), SequenceAgent(epochs=25)]
-    # eta acts on mean-normalized losses; alpha is the Fixed-Share mixing rate that
-    # keeps the ensemble from collapsing onto one agent so it stays regime-adaptive.
-    aggregator = HedgeAggregator(n_agents=len(agents), eta=0.2, alpha=0.05)
+    # loss_mode="directional": weight agents by realized P&L (not MSE) so the ensemble
+    # rewards correct *direction* — the thing that actually drives returns. eta scales
+    # the update; alpha (Fixed-Share) keeps every agent revivable for regime adaptation.
+    aggregator = HedgeAggregator(n_agents=len(agents), eta=0.5, alpha=0.05,
+                                 loss_mode="directional")
 
     print("Running walk-forward backtest (this may take a few minutes)...")
     results = walk_forward_backtest(agents, aggregator, df,

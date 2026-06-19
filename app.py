@@ -98,11 +98,11 @@ active_agents = [a for a in AGENT_NAMES
 
 # Eta info
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Hedge η / Fixed-Share (info)**")
-st.sidebar.info("η=0.2 on mean-normalized losses (scale-invariant update). "
-                "Fixed-Share α=0.05 mixes a uniform component back each step so no "
-                "agent dies — vanilla Hedge collapses onto one agent in a "
-                "non-stationary market; Fixed-Share stays regime-adaptive.")
+st.sidebar.markdown("**Hedge config (info)**")
+st.sidebar.info("Loss = realized P&L (directional), not MSE — so agents are weighted "
+                "by whether they call direction right, the thing that drives returns. "
+                "η=0.5 scales the update; Fixed-Share α=0.05 keeps every agent "
+                "revivable so the ensemble stays regime-adaptive instead of collapsing.")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.title("📈 Multi-Agent Financial Forecasting")
