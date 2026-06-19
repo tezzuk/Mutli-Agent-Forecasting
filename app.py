@@ -34,8 +34,13 @@ REGIME_BANDS = [
 
 
 # ── Data loading (cached) ─────────────────────────────────────────────────────
+def _mtime(path: pathlib.Path) -> float:
+    """File modification time — used as a cache key so regenerated CSVs auto-reload."""
+    return path.stat().st_mtime if path.exists() else 0.0
+
+
 @st.cache_data
-def load_results() -> pd.DataFrame | None:
+def load_results(_mtime_key: float) -> pd.DataFrame | None:
     if not RESULTS_PATH.exists():
         return None
     df = pd.read_csv(RESULTS_PATH, index_col=0, parse_dates=True)
@@ -43,7 +48,7 @@ def load_results() -> pd.DataFrame | None:
 
 
 @st.cache_data
-def load_metrics() -> pd.DataFrame | None:
+def load_metrics(_mtime_key: float) -> pd.DataFrame | None:
     if not METRICS_PATH.exists():
         return None
     return pd.read_csv(METRICS_PATH)
@@ -63,8 +68,8 @@ def add_regime_bands(fig: go.Figure, df: pd.DataFrame) -> go.Figure:
 st.sidebar.title("⚙️ Controls")
 st.sidebar.markdown("---")
 
-results = load_results()
-metrics = load_metrics()
+results = load_results(_mtime(RESULTS_PATH))
+metrics = load_metrics(_mtime(METRICS_PATH))
 
 if results is None:
     st.error(
