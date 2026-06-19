@@ -203,11 +203,16 @@ class SequenceAgent(BaseAgent):
         return np.array(X, dtype=np.float32), np.array(y, dtype=np.float32)
 
     def fit(self, train_df: pd.DataFrame) -> None:
-        # Fixed seed → reproducible LSTM. Without this, every backtest trains a
-        # different network, so run-to-run Sharpe wanders by ~0.1 and you can't
-        # tell a real effect (e.g. a loss-function change) from training noise.
+        # Fixed seed → reproducible LSTM. torch.manual_seed alone is NOT enough on a
+        # GPU: cuDNN picks non-deterministic algorithms by default, so run-to-run
+        # Sharpe wandered ~0.1 and confounded every comparison. We also seed CUDA and
+        # force cuDNN into deterministic mode so the backtest is reproducible on both
+        # CPU and GPU.
         torch.manual_seed(0)
+        torch.cuda.manual_seed_all(0)
         np.random.seed(0)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
         returns = train_df["log_return"].values.reshape(-1, 1)
         scaled = self._scaler.fit_transform(returns).flatten()

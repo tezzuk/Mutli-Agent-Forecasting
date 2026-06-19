@@ -30,7 +30,8 @@
 | 9 | **Hedge collapses onto one agent (no adaptivity)** | **Algorithm** | `d78bc07` |
 | 10 | **Hedge loss (MSE) misaligned with trading P&L** | **Methodology** | `31ebdf0` |
 | 10b | Directional loss tested → didn't hold → reverted to MSE | Methodology (negative result) | revert |
-| 11 | No fixed seed → results not reproducible | Reproducibility | seed |
+| 11 | No fixed seed → results not reproducible (incl. GPU/cuDNN) | Reproducibility | seed |
+| 12 | Conviction threshold tested → hurt performance | Methodology (negative result) | `85e7aca` |
 
 Bold = substantive findings worth talking about in an interview. The rest are
 ordinary "make it run / make it deploy" fixes.
@@ -371,15 +372,50 @@ changes (e.g. MSE vs directional loss) — any difference could be training nois
 **Root cause:** the LSTM (PyTorch weight init + training) used no fixed seed, so each
 `fit()` produced a different network.
 
-**Fix:** seed at the start of `SequenceAgent.fit()`:
+**Fix (first attempt — incomplete):**
 ```python
 torch.manual_seed(0)
 np.random.seed(0)
 ```
+This made the LSTM reproducible on **CPU**, but on Colab's **GPU** the Sharpe still wandered
+(SequenceAgent 0.884 one run, 0.728 the next). Reason: `torch.manual_seed` does not control
+cuDNN, which selects non-deterministic RNN/LSTM algorithms by default.
 
-**Lesson:** reproducibility is a prerequisite for *any* honest A/B comparison. Set the seed
-before you start drawing conclusions from metric differences — otherwise you're reading
-noise.
+**Fix (complete):**
+```python
+torch.manual_seed(0)
+torch.cuda.manual_seed_all(0)
+np.random.seed(0)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+```
+
+**Lesson:** reproducibility is a prerequisite for *any* honest A/B comparison — and on a GPU
+that takes more than `manual_seed`. You must also seed CUDA and force cuDNN deterministic,
+or the deep-learning agent silently re-randomizes every run.
+
+---
+
+### Correction 12 — Conviction threshold tested; it *hurt* (another negative result)
+**File:** `pipeline/metrics.py`, `pipeline/backtest.py` · **Commit:** `85e7aca`
+
+**Hypothesis:** trade only on the most-confident days (largest |prediction|) and sit in cash
+otherwise — high-conviction days should carry more edge, lifting Sharpe.
+
+**Result:** the opposite. `Hedge (Conviction)` (trade only the top-50% by |pred|) came in at
+**Sharpe −0.133**, well below the always-trading `Hedge Ensemble` (0.382).
+
+**Why:** for these models, prediction *magnitude* is uninformative about prediction
+*accuracy*. Large predictions cluster in volatile regimes (COVID, 2022) where direction is
+hardest, and the discarded low-|pred| days were the quiet uptrend days where being long
+quietly worked. Concentrating on "high conviction" concentrated on the hardest days.
+
+**Decision:** keep the `conviction` parameter in the code (default 0 = trade always) and
+keep the `Hedge (Conviction)` row as a *documented negative result*. The model's confidence
+does not track its accuracy — worth showing, not hiding.
+
+**Lesson:** "only trade when confident" is sound intuition *only if* your confidence signal
+is calibrated. Test that assumption before relying on it.
 
 ---
 
@@ -391,13 +427,14 @@ noise.
 | 2 | + η normalize, LSTM padding, epochs | 0.871 | 0.871 vs 0.229 ✓ | 0.822 / 54.0% (honest) | collapses to 100% Sequence |
 | 3 | + Fixed-Share | 0.368 | 0.368 vs 0.200 ✓ | 0.884 / 54.3% | adaptive, all 4 breathing ✓ |
 | 4 | + directional (P&L) loss | 0.192 | 0.192 vs 0.145 ✓ | 0.698 / 53.9% | adaptive ✓ (but Hedge regressed) |
-| 5 | revert to MSE **+ fixed seed** | *re-run pending* | — | — | reproducible from here on |
+| 5 | revert to MSE + partial seed | 0.382 | 0.382 vs 0.241 ✓ | 0.728 / 54.6% | conviction tested → −0.133 (hurt) |
+| 6 | + full GPU determinism | *re-run pending* | — | — | truly reproducible from here on |
 
-(Runs 2–4 differed between executions because the LSTM had no fixed seed — absolute Sharpe
-wandered ~0.05–0.1 run to run, which is exactly why Correction 11 adds a seed. From Run 5
-onward the numbers are reproducible. The *structural* findings were stable throughout:
-Hedge > Equal Weight always; Buy & Hold is hard to beat; the technical-indicator agents are
-coin flips.)
+(Runs 2–5 differed between executions because the LSTM seed didn't cover the GPU/cuDNN path —
+absolute Sharpe wandered ~0.05–0.15 run to run, which is exactly why Correction 11 was
+completed in Run 6. From Run 6 onward the numbers are reproducible. The *structural* findings
+were stable throughout: Hedge > Equal Weight always; Buy & Hold is hard to beat; the
+technical-indicator agents are coin flips; conviction thresholding doesn't help.)
 
 ---
 
