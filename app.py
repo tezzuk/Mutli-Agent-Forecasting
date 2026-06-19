@@ -190,7 +190,7 @@ metrics_main = metrics[~metrics["Label"].isin(ABLATION_LABELS)].copy()
 
 # ── Tab 1: Performance ──────────────────────────────────────────────────────────
 with tab1:
-    st.subheader("$10,000 Grown Over the Backtest")
+    st.subheader("\\$10,000 Grown Over the Backtest")
 
     bh_ret = results["actual"].values
 
@@ -238,9 +238,9 @@ with tab1:
     st.plotly_chart(eq, use_container_width=True)
 
     st.info(
-        f"**Reading this:** Buy & Hold turned $10k into **${bh_final:,.0f}** "
+        f"**Reading this:** Buy & Hold turned \\$10k into **\\${bh_final:,.0f}** "
         f"({bh_final/10000:.1f}×) by riding the 12-year bull market. The active Hedge model "
-        f"reached **${hedge_final:,.0f}** ({hedge_final/10000:.1f}×). Passive wins on raw "
+        f"reached **\\${hedge_final:,.0f}** ({hedge_final/10000:.1f}×). Passive wins on raw "
         "growth — which is *expected*: beating daily SPY by timing is near-impossible. The "
         "model's contribution is **adaptive model selection** (it beats naive equal-weighting "
         "by ~58% on risk-adjusted return), not out-growing passive equity.",
