@@ -114,6 +114,16 @@ def full_metrics_report(results_df: pd.DataFrame,
         label="Hedge Ensemble",
     ))
 
+    # Same ensemble, but only trade on the most-confident half of days (sit in cash
+    # otherwise). Tests whether high-|pred| days carry more edge than noise days.
+    tables.append(metrics_table(
+        results_df["actual"].values,
+        results_df["ensemble_pred"].values,
+        benchmark=bh_returns,
+        label="Hedge (Conviction)",
+        conviction=0.5,
+    ))
+
     # Equal-weight ensemble (simple mean of agent predictions)
     agent_pred_cols = [f"{n}_pred" for n in agent_names if f"{n}_pred" in results_df.columns]
     eq_pred = results_df[agent_pred_cols].mean(axis=1).values

@@ -22,8 +22,8 @@ METRICS_PATH = pathlib.Path(__file__).parent / "results" / "metrics_report.csv"
 AGENT_NAMES  = ["TrendAgent", "MomentumAgent", "VolatilityAgent", "SequenceAgent"]
 AGENT_COLORS = {"TrendAgent": "#4361ee", "MomentumAgent": "#f77f00",
                 "VolatilityAgent": "#06d6a0", "SequenceAgent": "#7209b7",
-                "Hedge Ensemble": "#ef233c", "Equal Weight": "#8b8fa8",
-                "Buy & Hold": "#adb5bd"}
+                "Hedge Ensemble": "#ef233c", "Hedge (Conviction)": "#d00000",
+                "Equal Weight": "#8b8fa8", "Buy & Hold": "#adb5bd"}
 
 REGIME_BANDS = [
     {"x0": "2020-02-20", "x1": "2020-04-07",
