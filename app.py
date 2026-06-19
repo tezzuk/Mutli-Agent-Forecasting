@@ -110,7 +110,7 @@ st.sidebar.info(
 )
 
 # ── Header ────────────────────────────────────────────────────────────────────
-st.title("📈 Multi-Agent Financial Forecasting")
+st.title("Multi-Agent Financial Forecasting")
 st.caption("Hedge online learning · 48-fold walk-forward backtest · SPY 2010–2024 · "
            "Stamatics IIT Kanpur")
 
@@ -166,7 +166,7 @@ st.markdown("")
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3 = st.tabs(
-    ["🏆 Performance", "⚖️ Adaptive Weights", "🔬 Diagnostics & Findings"]
+    ["Performance", "Adaptive Weights", "Diagnostics & Findings"]
 )
 
 # Models to feature in the headline charts (drop ablations)
