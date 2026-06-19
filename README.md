@@ -1,60 +1,25 @@
 # Multi-Agent Financial Forecasting
 
-> An online-learning system for financial forecasting where four specialized agents compete and adapt in real time via regret-minimizing game-theoretic aggregation (Hedge + Fixed-Share). The adaptive ensemble outperforms naive equal-weighting by ~58% on Sharpe over a 48-fold walk-forward backtest of SPY (2013–2024).
+**An online-learning ensemble for daily S&P 500 forecasting.** Four specialist models
+(trend, momentum, volatility, and an LSTM) each forecast the next day's return; a
+regret-minimizing **Hedge** aggregator (Freund–Schapire 1997) with **Fixed-Share**
+adaptation (Herbster–Warmuth 1998) reweights them every day toward whichever models are
+currently most accurate. Validated with a 48-fold walk-forward backtest on SPY (2010–2024).
 
-**Stamatics IIT Kanpur · Mentors:** Aayushman Tripathi, Manthan Khetade, Arisht Daiya
-
----
-
-## Architecture
-
-```
-Live Data (yfinance SPY + VIX, 2010–2024)
-        │
-        ▼
-Feature Engineering
-  ├── Log returns (stationary target)
-  ├── Technical: RSI-14, MACD signal, Bollinger width
-  ├── Volatility: rolling std 5d/21d
-  ├── Calendar: VIX level + 5d change
-  └── Lag features: lag_1 through lag_10
-        │
-        ▼
-Agent Pool (4 specialists, uniform interface)
-  ├── TrendAgent       — LinearRegression + DeterministicProcess + CalendarFourier
-  ├── MomentumAgent    — XGBoost on lag + rolling features
-  ├── VolatilityAgent  — XGBoost with VIX + Bollinger features
-  └── SequenceAgent    — 2-layer LSTM (hidden=64, window=30, PyTorch)
-        │
-        ▼
-Hedge Aggregator (Freund & Schapire 1997 + Fixed-Share, Herbster & Warmuth 1998)
-  ├── Weights agents by recent (mean-normalized) accuracy each day
-  ├── w_i ← w_i · exp(−η · L_i), normalize, then mix in α-uniform
-  └── Fixed-Share keeps every agent revivable → stays regime-adaptive
-        │
-        ▼
-Walk-Forward Backtest
-  ├── 3-year initial window, 3-month steps (48 folds, 2,992 test days)
-  ├── Sharpe ratio, max drawdown, directional accuracy, IR
-  └── Baseline: Buy-and-hold SPY
-        │
-        ▼
-Streamlit Dashboard (app.py)
-  ├── Tab 1: Performance — equity curves + Sharpe/directional-accuracy bars
-  ├── Tab 2: Adaptive Weights — Hedge weight evolution (the centerpiece)
-  └── Tab 3: Diagnostics — full metrics + honest findings
-```
+<p align="center">
+  <em>The adaptive ensemble outperforms naive equal-weighting by ~58% on Sharpe, and the
+  system self-selects the agents that carry genuine signal.</em>
+</p>
 
 ---
 
-## Results
+## Key results
 
-48-fold walk-forward backtest on SPY daily log returns, 2013–2024 (2,992 out-of-sample
-days). Strategy = `sign(prediction) × actual_return` (daily long/short). Results are
-**reproducible** (fixed seed + cuDNN determinism).
+48-fold walk-forward backtest, 2,992 out-of-sample days, reproducible (fixed seed +
+deterministic cuDNN). Strategy: go long/short daily by predicted direction.
 
-| Model | Directional Accuracy | Sharpe | Max Drawdown | Info Ratio |
-|---|---|---|---|---|
+| Model | Directional Acc. | Sharpe | Max Drawdown | Info Ratio |
+|---|---:|---:|---:|---:|
 | Buy & Hold (benchmark) | 55.5% | **0.79** | 0.34 | 0.00 |
 | SequenceAgent (LSTM) | 54.6% | **0.73** | 0.34 | −0.11 |
 | TrendAgent | 52.8% | 0.45 | 0.38 | −0.42 |
@@ -63,125 +28,110 @@ days). Strategy = `sign(prediction) × actual_return` (daily long/short). Result
 | VolatilityAgent | 50.5% | 0.14 | 0.38 | −0.59 |
 | MomentumAgent | 50.6% | −0.01 | 0.45 | −0.64 |
 
-### What the numbers say
+**What the numbers show**
 
-- **The adaptive Hedge ensemble beats the naive equal-weight baseline by ~58%**
-  (0.38 vs 0.24 Sharpe) — the online-learning aggregation does real work, not just averaging.
-- **The best agent (LSTM) is competitive with passive Buy & Hold** on a risk-adjusted
-  basis (0.73 vs 0.79), and the system **self-selects** it without being told to.
-- **The technical-indicator agents are essentially coin flips** (~50% directional
-  accuracy) — exactly what weak-form market efficiency predicts. The trend and sequence
-  agents carry whatever signal exists.
-- **Beating passive Buy & Hold on *daily* index returns is near-impossible**, and not doing
-  so is the scientifically honest result. The contribution here is **adaptive, regime-aware
-  model selection** — not a market-beating trading strategy.
-
-> Two design ideas were tested and **did not** hold up — a P&L-aligned loss (chased daily
-> noise) and a conviction threshold (the model's confidence doesn't track its accuracy).
-> Both are documented as negative results. See **[CORRECTIONS.md](CORRECTIONS.md)** for the
-> full debugging and methodology log.
+- **The aggregation adds real value** — the adaptive Hedge ensemble beats naive
+  equal-weighting by ~58% on Sharpe (0.38 vs 0.24).
+- **The best agent is competitive with passive** — the LSTM reaches 0.73 Sharpe vs Buy &
+  Hold's 0.79, and the ensemble self-selects it without supervision.
+- **Technical-indicator agents are ~coin flips** (~50% directional accuracy) — exactly as
+  weak-form market efficiency predicts on liquid daily data.
+- **Beating passive Buy & Hold on daily index returns is near-impossible**, and not doing so
+  is the scientifically honest result. The contribution here is **adaptive, regime-aware
+  model selection** — not a market-beating trading strategy. Two design ideas
+  (a P&L-aligned loss and a conviction threshold) were tested and **did not** hold up; both
+  are documented as negative results in [`docs/CORRECTIONS.md`](docs/CORRECTIONS.md).
 
 ---
 
-## Setup
+## Method
+
+```
+Yahoo Finance (SPY + VIX, 2010–2024)
+        │   data/fetch.py
+        ▼
+Feature engineering ─ pipeline/features.py
+   log returns · RSI · MACD · Bollinger width · lag & rolling stats · VIX
+        │   (all shifted ≥1 day — no lookahead)
+        ▼
+Four agents ─ pipeline/agents.py
+   TrendAgent (OLS + Fourier) · MomentumAgent (XGBoost) ·
+   VolatilityAgent (XGBoost) · SequenceAgent (LSTM)
+        │   (each makes an independent daily forecast)
+        ▼
+Hedge + Fixed-Share aggregator ─ pipeline/aggregator.py
+   w_i ← w_i · exp(−η · L_i), normalize, then mix in α-uniform
+        │
+        ▼
+Walk-forward backtest ─ pipeline/backtest.py + metrics.py
+   48 folds · Sharpe · max drawdown · directional accuracy · information ratio
+        │
+        ▼
+Streamlit dashboard ─ app.py
+```
+
+**Design choices.** Log returns (stationary, additive) as the target; walk-forward
+validation (never shuffle time series); Hedge over simple averaging (adaptive, with an
+O(√(T·log N)) no-regret bound); Fixed-Share on top (markets are non-stationary, so no agent
+should ever die). Full rationale and a line-by-line code walkthrough are in
+[`docs/REPORT.html`](docs/REPORT.html).
+
+---
+
+## Quick start
 
 ```bash
-# 1. Install dependencies
 pip install -r requirements.txt
-
-# 2. Fetch data + run backtest (saves results/backtest_results.csv)
-python -m pipeline.backtest
-
-# 3. Launch dashboard
-streamlit run app.py
+python -m pipeline.backtest     # downloads data, runs the 48-fold backtest, writes results/
+streamlit run app.py            # launch the interactive dashboard
 ```
 
-**Requirements:** Python 3.10+, internet connection (first run downloads SPY/VIX from Yahoo Finance).
+Requires Python 3.10+. The first run downloads SPY/VIX from Yahoo Finance; later runs use the
+cached CSVs. The backtest is reproducible — re-running gives identical numbers.
 
 ---
 
-## Repository Structure
+## Repository structure
 
 ```
-stamatics/
-├── data/
-│   └── fetch.py               # yfinance ingestion + caching
-├── pipeline/
-│   ├── features.py            # feature engineering (no lookahead)
-│   ├── agents.py              # BaseAgent ABC + 4 specialists
-│   ├── aggregator.py          # Hedge + EqualWeight aggregators
-│   ├── backtest.py            # walk-forward engine + metrics report
-│   ├── evaluate.py            # agent comparison harness
-│   └── metrics.py             # Sharpe, drawdown, directional accuracy, IR
-├── notebooks/
-│   ├── Week1_Assignment.ipynb # Time series foundations
-│   ├── Week2_Assignment.ipynb # ML for forecasting
-│   └── Week3_Assignment.ipynb # Financial features + agent design
-├── results/
-│   ├── backtest_results.csv   # generated by pipeline.backtest
-│   └── metrics_report.csv     # generated by pipeline.backtest
-├── reports/                   # day-by-day PDF-ready HTML build logs
-├── app.py                     # Streamlit dashboard
-├── CORRECTIONS.md             # full debugging + methodology log (incl. negative results)
-└── requirements.txt
+.
+├── app.py                  # Streamlit dashboard
+├── requirements.txt
+├── data/                   # data ingestion (yfinance) — see data/README.md
+├── pipeline/               # features, agents, aggregator, backtest — see pipeline/README.md
+├── notebooks/              # teaching notebooks (weeks 1–3) — see notebooks/README.md
+├── results/                # backtest output CSVs (consumed by the dashboard)
+└── docs/                   # report, methodology log, resources — see docs/README.md
+    ├── REPORT.html         # complete technical report (printable to PDF)
+    ├── CORRECTIONS.md      # debugging & methodology log (incl. negative results)
+    └── resources/          # supporting PDFs
 ```
+
+Each top-level package has its own `README.md` documenting its modules.
 
 ---
 
-## Key Concepts
+## Documentation
 
-**Why log returns, not prices?**  
-Prices are non-stationary (SPY: $115→$480 from 2010–2024). Log returns are approximately stationary, additive over time, and closer to Gaussian — all properties that ML models depend on.
-
-**Why walk-forward validation, not random split?**  
-Financial data has temporal structure. Shuffling introduces lookahead bias — the model "knows" the future. Walk-forward validation respects time: each test period is always in the future relative to its training window.
-
-**Why Hedge over simple average?**  
-Simple averaging ignores which agents are currently performing better. The Hedge algorithm (multiplicative weights update) adapts in real time, downweighting agents with high recent losses. The regret bound O(√(T·log N)) guarantees the ensemble performs no worse than the best individual agent in hindsight, up to a vanishing term. Empirically, our Hedge ensemble beats the equal-weight baseline by ~58% on Sharpe.
-
-**Why Fixed-Share on top of Hedge?**  
-Vanilla Hedge is built for *stationary* problems — it converges onto the single best expert and never reconsiders (once an agent's weight decays to ~0 it can't recover). Markets are non-stationary, so we add **Fixed-Share** (Herbster & Warmuth 1998): after each update, mix a small uniform component back in so every agent stays revivable and the ensemble can re-allocate when the regime changes. This is what makes the weight-evolution chart genuinely adaptive instead of collapsing onto one agent.
-
----
-
-## Hedge + Fixed-Share Aggregator
-
-```python
-def update(self, predictions, actual):
-    losses = (np.array(predictions) - actual) ** 2
-    # Scale-invariance: raw squared log-return losses are ~1e-4, which would make
-    # exp(-eta*loss) ≈ 1 (a no-op). Normalize by the per-step mean so eta is meaningful.
-    norm_losses = losses / (losses.mean() + 1e-12)
-    self.weights *= np.exp(-self.eta * norm_losses)      # Hedge (multiplicative weights)
-    self.weights /= self.weights.sum()
-    # Fixed-Share: keep every agent revivable for regime adaptation
-    self.weights = (1 - self.alpha) * self.weights + self.alpha / self.n_agents
-    self.weights /= self.weights.sum()
-```
-
-Two subtle but critical details (both discovered the hard way — see CORRECTIONS.md):
-loss **normalization** (without it the weights never move on tiny log-return losses), and
-**Fixed-Share** (without it the ensemble collapses onto one agent and loses adaptivity).
-
----
-
-## Student Curriculum
-
-| Week | Topic |
+| Document | What it covers |
 |---|---|
-| 1 | Time series components, pandas, decomposition |
-| 2 | ML for forecasting: linear models, XGBoost, hybrid |
-| 3 | Financial features: log returns, RSI, MACD, Bollinger |
-| 4 | Agent framework + Hedge algorithm |
-| 5 | Walk-forward backtesting + financial metrics |
-| 6 | LSTM sequence agent (PyTorch) |
-| 7 | Full pipeline integration + Streamlit dashboard |
-| 8 | Final submissions, leaderboard, discussion |
+| [`docs/REPORT.html`](docs/REPORT.html) | Full technical report — every term, every module, each agent end-to-end, all results |
+| [`docs/CORRECTIONS.md`](docs/CORRECTIONS.md) | Engineering & methodology log: every fix from the baseline, including two honest negative results |
+| `pipeline/README.md` | The forecasting pipeline modules |
+| `data/README.md` | Data ingestion and caching |
+| `notebooks/README.md` | Teaching curriculum |
 
 ---
 
 ## References
 
-- Freund, Y. & Schapire, R.E. (1997). *A decision-theoretic generalization of on-line learning and an application to boosting.* Journal of Computer and System Sciences, 55(1), 119–139.
+- Freund, Y. & Schapire, R. E. (1997). *A decision-theoretic generalization of on-line learning and an application to boosting.* JCSS 55(1), 119–139. — Hedge algorithm.
+- Herbster, M. & Warmuth, M. K. (1998). *Tracking the best expert.* Machine Learning 32(2), 151–178. — Fixed-Share.
 - Bollinger, J. (2002). *Bollinger on Bollinger Bands.* McGraw-Hill.
-- Wilder, J.W. (1978). *New Concepts in Technical Trading Systems.* Trend Research.
+- Wilder, J. W. (1978). *New Concepts in Technical Trading Systems.* — RSI.
+
+---
+
+## License
+
+Released under the MIT License — see [`LICENSE`](LICENSE).
