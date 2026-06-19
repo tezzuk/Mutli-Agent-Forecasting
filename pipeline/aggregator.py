@@ -18,9 +18,10 @@ class HedgeAggregator:
     Interpretation: cumulative loss of ensemble <= best agent in hindsight + O(sqrt(T log N))
     """
 
-    def __init__(self, n_agents: int, eta: float = 0.1):
+    def __init__(self, n_agents: int, eta: float = 0.2, alpha: float = 0.05):
         self.n_agents = n_agents
         self.eta = eta
+        self.alpha = alpha                            # Fixed-Share mixing rate
         self.weights = np.ones(n_agents) / n_agents   # start uniform
         self.weight_history: list[np.ndarray] = []    # one entry per update step
         self.loss_history: list[np.ndarray] = []
@@ -46,8 +47,19 @@ class HedgeAggregator:
         losses = (preds - actual) ** 2                        # squared error per agent
         scale = losses.mean() + 1e-12                         # per-step loss scale
         norm_losses = losses / scale                          # relative, scale-free
-        self.weights *= np.exp(-self.eta * norm_losses)       # multiplicative penalty
-        self.weights /= self.weights.sum()                    # renormalize to sum=1
+
+        # 1) Multiplicative weights (Hedge) penalty
+        self.weights *= np.exp(-self.eta * norm_losses)
+        self.weights /= self.weights.sum()
+
+        # 2) Fixed-Share (Herbster & Warmuth, 1998): mix a small uniform component
+        #    back in so no agent's weight ever decays to 0. Vanilla Hedge collapses
+        #    onto a single agent in a non-stationary market and can never recover;
+        #    Fixed-Share keeps every agent revivable, so the ensemble can re-allocate
+        #    when the market regime changes. Each weight stays >= alpha / N.
+        self.weights = (1 - self.alpha) * self.weights + self.alpha / self.n_agents
+        self.weights /= self.weights.sum()                    # guard against fp drift
+
         self.weight_history.append(self.weights.copy())
         self.loss_history.append(losses.copy())
 
@@ -69,7 +81,7 @@ class HedgeAggregator:
         return df
 
     def reset(self) -> None:
-        """Reset to uniform weights — useful between backtest folds."""
+        """Reset to uniform weights — useful between backtest runs."""
         self.weights = np.ones(self.n_agents) / self.n_agents
         self.weight_history.clear()
         self.loss_history.clear()

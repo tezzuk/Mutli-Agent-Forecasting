@@ -98,10 +98,11 @@ active_agents = [a for a in AGENT_NAMES
 
 # Eta info
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Hedge η (info)**")
-st.sidebar.info("η=0.5 on mean-normalized losses. Normalization makes the "
-                "multiplicative update scale-invariant so weights actually adapt "
-                "to regime (raw squared log-return losses ≈1e-4 are too small).")
+st.sidebar.markdown("**Hedge η / Fixed-Share (info)**")
+st.sidebar.info("η=0.2 on mean-normalized losses (scale-invariant update). "
+                "Fixed-Share α=0.05 mixes a uniform component back each step so no "
+                "agent dies — vanilla Hedge collapses onto one agent in a "
+                "non-stationary market; Fixed-Share stays regime-adaptive.")
 
 # ── Header ────────────────────────────────────────────────────────────────────
 st.title("📈 Multi-Agent Financial Forecasting")
