@@ -1,8 +1,8 @@
 Label,MAE,Directional Accuracy,Sharpe Ratio,Max Drawdown,Information Ratio
 Buy & Hold,0.00647,0.5551,0.786,0.3372,0.0
-SequenceAgent,0.006965,0.2848,0.62,0.1945,-0.433
+SequenceAgent,0.006971,0.5445,0.69,0.3372,-0.193
+Hedge Ensemble,0.006974,0.5421,0.67,0.3372,-0.225
 TrendAgent,0.007004,0.5277,0.447,0.3762,-0.422
-Hedge Ensemble,0.007022,0.517,0.215,0.3082,-0.549
-Equal Weight,0.007022,0.517,0.215,0.3082,-0.549
-MomentumAgent,0.007319,0.5037,0.021,0.4765,-0.615
-VolatilityAgent,0.0072,0.5007,-0.056,0.4578,-0.763
+Equal Weight,0.007023,0.5187,0.228,0.3055,-0.593
+MomentumAgent,0.007315,0.5013,0.06,0.3739,-0.605
+VolatilityAgent,0.007201,0.5033,-0.005,0.3778,-0.716
