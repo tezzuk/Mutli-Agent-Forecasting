@@ -162,6 +162,21 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+with st.expander("New here? How to read this dashboard"):
+    st.markdown(
+        "This project forecasts the next day's move in the **S&P 500** using four different "
+        "models (\"agents\"), then blends their forecasts with an online-learning algorithm "
+        "(**Hedge**) that automatically trusts whichever model is doing best right now.\n\n"
+        "- **Performance** — how much money each approach would have made, and how often it "
+        "called the market's direction correctly.\n"
+        "- **Adaptive Weights** — the heart of the project: watch the algorithm shift trust "
+        "between the four models over time as market conditions change.\n"
+        "- **Diagnostics & Findings** — the full numbers plus an honest account of what "
+        "worked, what didn't, and why.\n\n"
+        "**One-line takeaway:** beating the market by trading daily is near-impossible (and we "
+        "don't claim to) — the real result is that the adaptive blend reliably beats a naive "
+        "average and correctly identifies which models actually have skill."
+    )
 st.markdown("")
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -176,20 +191,31 @@ metrics_main = metrics[~metrics["Label"].isin(ABLATION_LABELS)].copy()
 # ── Tab 1: Performance ──────────────────────────────────────────────────────────
 with tab1:
     st.subheader("$10,000 Grown Over the Backtest")
-    st.caption("Each strategy goes long/short daily by its predicted direction. "
-               "Buy & Hold is the passive benchmark.")
 
     bh_ret = results["actual"].values
 
     def equity(preds, actuals):
         return 10_000 * np.exp(np.cumsum(np.sign(preds) * actuals))
 
+    hedge_curve = equity(results["ensemble_pred"].values, bh_ret)
+    bh_curve = 10_000 * np.exp(np.cumsum(bh_ret))
+    bh_final, hedge_final = float(bh_curve[-1]), float(hedge_curve[-1])
+
+    # At-a-glance dollar summary
+    s1, s2, s3 = st.columns(3)
+    s1.metric("Starting capital", "$10,000")
+    s2.metric("Buy & Hold (passive)", f"${bh_final:,.0f}",
+              f"{bh_final/10000:.1f}× · +{bh_final/10000-1:.0%}", delta_color="off")
+    s3.metric("Hedge Ensemble (active)", f"${hedge_final:,.0f}",
+              f"{hedge_final/10000:.1f}× · +{hedge_final/10000-1:.0%}", delta_color="off")
+
+    st.caption("Each strategy goes long/short daily by its predicted direction. "
+               "Buy & Hold simply stays invested — the passive benchmark.")
+
     eq = go.Figure()
-    eq.add_trace(go.Scatter(x=results.index, y=equity(results["ensemble_pred"].values, bh_ret),
-                            name="Hedge Ensemble",
+    eq.add_trace(go.Scatter(x=results.index, y=hedge_curve, name="Hedge Ensemble",
                             line=dict(color=AGENT_COLORS["Hedge Ensemble"], width=2.5)))
-    eq.add_trace(go.Scatter(x=results.index, y=10_000*np.exp(np.cumsum(bh_ret)),
-                            name="Buy & Hold",
+    eq.add_trace(go.Scatter(x=results.index, y=bh_curve, name="Buy & Hold",
                             line=dict(color="#8b8fa8", width=1.8, dash="dash")))
     for a in active_agents:
         col = f"{a}_pred"
@@ -197,10 +223,28 @@ with tab1:
             eq.add_trace(go.Scatter(x=results.index, y=equity(results[col].values, bh_ret),
                                     name=a, line=dict(color=AGENT_COLORS[a], width=1),
                                     visible="legendonly"))
+    # End-of-period dollar labels
+    last = results.index[-1]
+    eq.add_annotation(x=last, y=bh_final, text=f"  ${bh_final:,.0f}",
+                      showarrow=False, xanchor="left", font=dict(color="#5f6368", size=13))
+    eq.add_annotation(x=last, y=hedge_final, text=f"  ${hedge_final:,.0f}",
+                      showarrow=False, xanchor="left",
+                      font=dict(color=AGENT_COLORS["Hedge Ensemble"], size=13))
     eq = add_regime_bands(eq, results)
     eq.update_layout(height=420, yaxis_title="Portfolio Value ($)",
-                     legend=dict(orientation="h", y=-0.18), **PLOTLY_LAYOUT)
+                     legend=dict(orientation="h", y=-0.18),
+                     xaxis=dict(range=[results.index[0], last + pd.Timedelta(days=240)]),
+                     **PLOTLY_LAYOUT)
     st.plotly_chart(eq, use_container_width=True)
+
+    st.info(
+        f"**Reading this:** Buy & Hold turned $10k into **${bh_final:,.0f}** "
+        f"({bh_final/10000:.1f}×) by riding the 12-year bull market. The active Hedge model "
+        f"reached **${hedge_final:,.0f}** ({hedge_final/10000:.1f}×). Passive wins on raw "
+        "growth — which is *expected*: beating daily SPY by timing is near-impossible. The "
+        "model's contribution is **adaptive model selection** (it beats naive equal-weighting "
+        "by ~58% on risk-adjusted return), not out-growing passive equity.",
+    )
 
     c1, c2 = st.columns(2)
     with c1:
@@ -224,9 +268,36 @@ with tab1:
 # ── Tab 2: Adaptive Weights (the centerpiece) ──────────────────────────────────
 with tab2:
     st.subheader("Hedge Weight Evolution — the System Adapting in Real Time")
-    st.caption("Weights sum to 100% each day. The mix shifts continuously toward "
-               "whichever agents are forecasting best, and no agent ever dies "
-               "(Fixed-Share) — so it can re-allocate when the regime changes.")
+    st.markdown(
+        "**What a weight means:** each agent's weight is how much of the ensemble's "
+        "daily forecast it controls — its share of the *vote*. The four weights always "
+        "sum to 100%. A **thicker band = that agent has been forecasting more accurately "
+        "lately**, so the algorithm trusts it more."
+    )
+    st.markdown(
+        "**How it adapts:** every day, each agent is scored on its prediction error. "
+        "Agents that did well get nudged up (`weight × exp(−η·loss)`); agents that did "
+        "badly shrink. A small **Fixed-Share** floor keeps every agent alive even after a "
+        "bad streak, so when the regime flips (e.g. calm → crash) a previously-ignored "
+        "agent can quickly regain weight. That's why the bands *breathe* rather than "
+        "freezing — the ensemble is continuously re-deciding who to trust."
+    )
+
+    with st.expander("What does each agent specialize in?"):
+        st.markdown(
+            "| Agent | Model | What it captures |\n"
+            "|---|---|---|\n"
+            "| **TrendAgent** | Linear regression + seasonality | Long-run upward drift "
+            "& calendar effects |\n"
+            "| **MomentumAgent** | XGBoost on lagged returns, RSI, MACD | Short-term "
+            "momentum / continuation |\n"
+            "| **VolatilityAgent** | XGBoost on VIX & Bollinger width | Volatility regime "
+            "(calm vs stressed) |\n"
+            "| **SequenceAgent** | 2-layer LSTM on 30-day return sequences | Non-linear "
+            "temporal patterns |\n\n"
+            "Each looks at the market through a different lens. The Hedge aggregator's job "
+            "is to figure out — live, without being told — which lens is working *now*."
+        )
 
     weight_cols = [f"{a}_weight" for a in active_agents if f"{a}_weight" in results.columns]
     wdf = results[weight_cols].copy()
